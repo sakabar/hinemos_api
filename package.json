@@ -1,5 +1,5 @@
 {
-  "name": "hinemos_auth",
+  "name": "hinemos_api",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sakabar/hinemos_auth.git"
+    "url": "git+https://github.com/sakabar/hinemos_api.git"
   },
   "author": "Takafumi Sakakibara",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sakabar/hinemos_auth/issues"
+    "url": "https://github.com/sakabar/hinemos_api/issues"
   },
-  "homepage": "https://github.com/sakabar/hinemos_auth#readme",
+  "homepage": "https://github.com/sakabar/hinemos_api#readme",
   "devDependencies": {
     "eslint": "4.11.0",
     "eslint-config-standard": "10.2.1",
@@ -30,7 +30,7 @@
     "body-parser": "1.18.2",
     "dotenv": "4.0.0",
     "express": "4.16.2",
-    "jsonwebtoken": "^8.1.0",
+    "jsonwebtoken": "8.1.0",
     "mysql2": "1.5.0",
     "sequelize": "4.22.7"
   }

@@ -26,6 +26,7 @@ const sequelize = new Sequelize(
 );
 
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
+const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
 
 // sequelize.sync({force: true}).then(() => {
 sequelize.sync().then(() => {
@@ -53,6 +54,9 @@ sequelize.sync().then(() => {
             const ans = {
                 success: {
                     code: 200,
+                    result: {
+                        userName
+                    },
                 },
             };
             res.json(ans);
@@ -80,19 +84,21 @@ sequelize.sync().then(() => {
                 res.status(400).send({
                     error: {
                         code: 400,
-                        // message: 'noop!',
                     },
                 });
                 return;
             }
 
             const token = jwt.sign({ userName, }, process.env.JWT_SECRET, {
-                expiresIn: '5m',
+                expiresIn: '24h',
             });
 
             const ans = {
                 success: {
                     code: 200,
+                    result: {
+                        userName
+                    },
                     token,
                 },
             };
@@ -106,6 +112,50 @@ sequelize.sync().then(() => {
             });
         });
     });
+
+    // /letterPair/:userName?word=試験
+    // /letterPair/:userName?letters=しけ
+    app.get('/hinemos/letterPair/:userName', (req, res, next) => {
+        const userName = req.params.userName;
+        const word = req.query.word;
+        const letters = req.query.letters;
+
+        let query;
+        if (word) {
+            query = {
+                where: {
+                    userName,
+                    word,
+                },
+            };
+        } else if (letters) {
+            query = {
+                where: {
+                    userName,
+                    letters,
+                },
+            };
+        } else {
+            query = { where: { userName, }, };
+        }
+
+        LetterPair.findAll(query).then((result) => {
+            res.json({
+                code: 200,
+                result,
+            });
+            res.status(200);
+        }, () => {
+            res.status(400).send(badRequestError);
+        });
+    });
+
+    const badRequestError = {
+        error: {
+            message: 'Bad Request',
+            code: 400,
+        },
+    };
 
     // Authentification Filter
     app.use((req, res, next) => {
@@ -126,7 +176,6 @@ sequelize.sync().then(() => {
                 res.status(403).send({
                     error: {
                         code: 403,
-                        // message: 'noop!',
                     },
                 });
                 return;
@@ -138,32 +187,40 @@ sequelize.sync().then(() => {
         });
     });
 
-    app.use('/hinemos/secret', (req, res, next) => {
-        User.findOne({
-            where: {
-                userName: 'admin',
+    app.use('/hinemos/check', (req, res, next) => {
+        const ans = {
+            success: {
+                code: 200,
             },
-        }).then((user) => {
-            if (!user) {
-                res.status(400).send({
-                    error: {
-                        code: 400,
-                        // message: 'noop!',
-                    },
-                });
-                return;
-            }
+        };
+        res.json(ans);
+        res.status(200);
+    });
 
+    app.post('/hinemos/letterPair/:userName', (req, res, next) => {
+        const userName = req.params.userName;
+        const word = req.body.word;
+        const letters = req.body.letters;
+
+        if (!word || !letters) {
+            res.status(400).send(badRequestError);
+        }
+
+        LetterPair.create({
+            userName,
+            word,
+            letters,
+        }).then((letterPair) => {
             const ans = {
                 success: {
                     code: 200,
-                    result: {
-                        user,
-                    },
+                    result: letterPair,
                 },
             };
             res.json(ans);
             res.status(200);
+        }, () => {
+            res.status(400).send(badRequestError);
         });
     });
 
