@@ -1,9 +1,20 @@
 require('dotenv').config();
+const bodyParser = require('body-parser');
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const logger = require('fluent-logger');
 const path = require('path');
 const Sequelize = require('sequelize');
-const express = require('express');
-const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
+
+// Fluentd
+logger.configure(process.env.FLUENTD_TAG, {
+    host: '127.0.0.1',
+    port: process.env.FLUENTD_PORT,
+});
+
+logger.emit('api.sys', {
+    msg: 'start',
+});
 
 const sequelize = new Sequelize(
     process.env.DB_NAME,
@@ -38,8 +49,8 @@ sequelize.sync().then(() => {
     app.use(bodyParser.json());
 
     app.use((req, res, next) => {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
         next();
     });
 
@@ -55,13 +66,36 @@ sequelize.sync().then(() => {
                 success: {
                     code: 200,
                     result: {
-                        userName
+                        userName,
                     },
                 },
             };
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/users',
+                param: {
+                    userName,
+                    password: '********',
+                },
+                status: 'success',
+                code: 200,
+                msg: '',
+            });
+
             res.json(ans);
             res.status(200);
         }, () => {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/users',
+                param: {
+                    userName,
+                    password: '********',
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
             res.status(400).send({
                 error: {
                     code: 400,
@@ -81,6 +115,17 @@ sequelize.sync().then(() => {
             },
         }).then((user) => {
             if (!user) {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/auth',
+                    param: {
+                        userName,
+                        password: '********',
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: 'No such user',
+                });
                 res.status(400).send({
                     error: {
                         code: 400,
@@ -97,14 +142,36 @@ sequelize.sync().then(() => {
                 success: {
                     code: 200,
                     result: {
-                        userName
+                        userName,
                     },
                     token,
                 },
             };
             res.json(ans);
             res.status(200);
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/auth',
+                param: {
+                    userName,
+                    password: '********',
+                },
+                status: 'success',
+                code: 200,
+                msg: '',
+            });
         }, () => {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/auth',
+                param: {
+                    userName,
+                    password: '********',
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
             res.status(400).send({
                 error: {
                     code: 400,
@@ -140,12 +207,38 @@ sequelize.sync().then(() => {
         }
 
         LetterPair.findAll(query).then((result) => {
-            res.json({
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/letterPair/' + userName,
+                param: {
+                    word,
+                    letters,
+                },
+                status: 'success',
                 code: 200,
-                result,
+                msg: '',
             });
+
+            res.json(
+                {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                });
             res.status(200);
         }, () => {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/letterPair/' + userName,
+                param: {
+                    word,
+                    letters,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
             res.status(400).send(badRequestError);
         });
     });
@@ -164,6 +257,14 @@ sequelize.sync().then(() => {
 
         // validate token
         if (!token) {
+            logger.emit('api.request', {
+                requestType: 'USE',
+                endpoint: '/hinemos/auth-filter',
+                param: {},
+                status: 'error',
+                code: 403,
+                msg: 'No token',
+            });
             return res.status(403).send({
                 error: {
                     code: 403,
@@ -173,6 +274,13 @@ sequelize.sync().then(() => {
 
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
             if (err) {
+                logger.emit('api.request', {
+                    endpoint: 'USE /hinemos/auth-filter',
+                    param: {},
+                    status: 'error',
+                    code: 403,
+                    msg: 'Error in verivifation',
+                });
                 res.status(403).send({
                     error: {
                         code: 403,
@@ -183,14 +291,32 @@ sequelize.sync().then(() => {
 
             // if token valid -> save token to request for use in other routes
             req.decoded = decoded;
+            logger.emit('api.request', {
+                requestType: 'USE',
+                endpoint: '/hinemos/auth-filter',
+                param: {},
+                status: 'success',
+                code: 200,
+                msg: '',
+            });
             next();
         });
     });
 
-    app.use('/hinemos/check', (req, res, next) => {
+    app.use('/hinemos/checkAuth', (req, res, next) => {
+        logger.emit('api.request', {
+            requestType: 'USE',
+            endpoint: '/hinemos/checkAuth',
+            param: {},
+            status: 'success',
+            code: 200,
+            msg: '',
+        });
+
         const ans = {
             success: {
                 code: 200,
+                result: req.decoded,
             },
         };
         res.json(ans);
@@ -204,6 +330,7 @@ sequelize.sync().then(() => {
 
         if (!word || !letters) {
             res.status(400).send(badRequestError);
+            return;
         }
 
         LetterPair.create({
@@ -217,12 +344,34 @@ sequelize.sync().then(() => {
                     result: letterPair,
                 },
             };
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/letterPair/' + userName,
+                param: {
+                    word,
+                    letters,
+                },
+                status: 'success',
+                code: 200,
+                msg: '',
+            });
             res.json(ans);
             res.status(200);
         }, () => {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/letterPair/' + userName,
+                param: {
+                    word,
+                    letters,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
             res.status(400).send(badRequestError);
         });
     });
 
-    app.listen(8000);
+    app.listen(process.env.EXPRESS_PORT);
 });
