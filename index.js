@@ -73,7 +73,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/users',
-                param: {
+                params: {
                     userName,
                     password: '********',
                 },
@@ -88,7 +88,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/users',
-                param: {
+                params: {
                     userName,
                     password: '********',
                 },
@@ -118,7 +118,7 @@ sequelize.sync().then(() => {
                 logger.emit('api.request', {
                     requestType: 'POST',
                     endpoint: '/hinemos/auth',
-                    param: {
+                    params: {
                         userName,
                         password: '********',
                     },
@@ -152,7 +152,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/auth',
-                param: {
+                params: {
                     userName,
                     password: '********',
                 },
@@ -164,7 +164,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/auth',
-                param: {
+                params: {
                     userName,
                     password: '********',
                 },
@@ -210,7 +210,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'GET',
                 endpoint: '/hinemos/letterPair/' + userName,
-                param: {
+                params: {
                     word,
                     letters,
                 },
@@ -231,7 +231,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'GET',
                 endpoint: '/hinemos/letterPair/' + userName,
-                param: {
+                params: {
                     word,
                     letters,
                 },
@@ -260,7 +260,10 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'USE',
                 endpoint: '/hinemos/auth-filter',
-                param: {},
+                params: {
+                    body: req.body,
+                    query: req.query,
+                },
                 status: 'error',
                 code: 403,
                 msg: 'No token',
@@ -276,7 +279,10 @@ sequelize.sync().then(() => {
             if (err) {
                 logger.emit('api.request', {
                     endpoint: 'USE /hinemos/auth-filter',
-                    param: {},
+                    params: {
+                        body: req.body,
+                        query: req.query,
+                    },
                     status: 'error',
                     code: 403,
                     msg: 'Error in verivifation',
@@ -294,7 +300,10 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'USE',
                 endpoint: '/hinemos/auth-filter',
-                param: {},
+                params: {
+                    body: req.body,
+                    query: req.query,
+                },
                 status: 'success',
                 code: 200,
                 msg: '',
@@ -307,7 +316,7 @@ sequelize.sync().then(() => {
         logger.emit('api.request', {
             requestType: 'USE',
             endpoint: '/hinemos/checkAuth',
-            param: {},
+            params: {},
             status: 'success',
             code: 200,
             msg: '',
@@ -328,7 +337,20 @@ sequelize.sync().then(() => {
         const word = req.body.word;
         const letters = req.body.letters;
 
-        if (!word || !letters) {
+        if ((req.decoded.userName !== userName) || !word || !letters) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/letterPair/' + userName,
+                params: {
+                    word,
+                    letters,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
             res.status(400).send(badRequestError);
             return;
         }
@@ -347,7 +369,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/letterPair/' + userName,
-                param: {
+                params: {
                     word,
                     letters,
                 },
@@ -361,7 +383,7 @@ sequelize.sync().then(() => {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/letterPair/' + userName,
-                param: {
+                params: {
                     word,
                     letters,
                 },
@@ -372,6 +394,128 @@ sequelize.sync().then(() => {
             res.status(400).send(badRequestError);
         });
     });
+
+    // 本当はDELETEメソッドを使いたいが、request-promiseでなぜかDELETEメソッドが使えなかったので
+    // POSTで代用
+    // FIXME
+    app.post('/hinemos/deleteLetterPair/:userName', (req, res, next) => {
+        const userName = req.params.userName;
+        const letters = req.body.letters;
+        const word = req.body.word;
+
+        if ((req.decoded.userName !== userName) || (!letters && !word) || (letters && word)) {
+            let msg = '';
+            if (req.decoded.userName !== userName) {
+                msg += 'decoded userName conflicts! ';
+            }
+            if (!letters && !word) {
+                msg += 'both letters and word are empty. ';
+            }
+            if (letters && word) {
+                msg += 'both letters and word are not empty. ';
+            }
+
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/deleteLetterPair/' + userName,
+                params: {
+                    letters,
+                    word,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg,
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        if (letters) {
+            const query = { where: { userName, letters, }, };
+            LetterPair.destroy(query);
+        } else if (word) {
+            const query = { where: { userName, word, }, };
+            LetterPair.destroy(query);
+        }
+
+        const ans = {
+            success: {
+                code: 200,
+                result: {
+                    userName,
+                    letters,
+                    word,
+                },
+                msg: 'Deleted.',
+            },
+        };
+
+        logger.emit('api.request', {
+            requestType: 'POST',
+            endpoint: '/hinemos/deleteLetterPair/' + userName,
+            params: {
+                letters,
+                word,
+                decoded: req.decoded,
+            },
+            status: 'success',
+            code: 200,
+            msg: '',
+        });
+        res.json(ans);
+        res.status(200);
+    });
+
+    // app.put('/hinemos/letterPair/:userName', (req, res, next) => {
+    //     const userName = req.params.userName;
+    //     const word = req.body.word;
+    //     const letters = req.body.letters;
+
+    //     if (!word || !letters) {
+    //         res.status(400).send(badRequestError);
+    //         return;
+    //     }
+
+    //     LetterPair.upsert({
+    //         userName,
+    //         word,
+    //         letters,
+    //     }).then((letterPair) => {
+    //         const ans = {
+    //             success: {
+    //                 code: 200,
+    //                 result: letterPair,
+    //             },
+    //         };
+    //         logger.emit('api.request', {
+    //             requestType: 'PUT',
+    //             endpoint: '/hinemos/letterPair/' + userName,
+    //             params: {
+    //                 word,
+    //                 letters,
+    //             },
+    //             status: 'success',
+    //             code: 200,
+    //             msg: '',
+    //         });
+    //         res.json(ans);
+    //         res.status(200);
+    //     }, () => {
+    //         logger.emit('api.request', {
+    //             requestType: 'PUT',
+    //             endpoint: '/hinemos/letterPair/' + userName,
+    //             params: {
+    //                 word,
+    //                 letters,
+    //             },
+    //             status: 'error',
+    //             code: 400,
+    //             msg: '',
+    //         });
+    //         res.status(400).send(badRequestError);
+    //     });
+    // });
 
     app.listen(process.env.EXPRESS_PORT);
 });
