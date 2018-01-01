@@ -54,7 +54,7 @@ sequelize.sync().then(() => {
         next();
     });
 
-    app.post('/hinemos/users', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/users', (req, res, next) => {
         const userName = req.body.userName;
         const password = req.body.password;
 
@@ -104,7 +104,7 @@ sequelize.sync().then(() => {
         });
     });
 
-    app.post('/hinemos/auth', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/auth', (req, res, next) => {
         const userName = req.body.userName;
         const password = req.body.password;
 
@@ -182,7 +182,7 @@ sequelize.sync().then(() => {
 
     // /letterPair/:userName?word=試験
     // /letterPair/:userName?letters=しけ
-    app.get('/hinemos/letterPair/:userName', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/letterPair/:userName', (req, res, next) => {
         const userName = req.params.userName;
         const word = req.query.word;
         const letters = req.query.letters;
@@ -312,7 +312,7 @@ sequelize.sync().then(() => {
         });
     });
 
-    app.use('/hinemos/checkAuth', (req, res, next) => {
+    app.use(process.env.EXPRESS_ROOT + '/checkAuth', (req, res, next) => {
         logger.emit('api.request', {
             requestType: 'USE',
             endpoint: '/hinemos/checkAuth',
@@ -332,7 +332,7 @@ sequelize.sync().then(() => {
         res.status(200);
     });
 
-    app.post('/hinemos/letterPair/:userName', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/letterPair/:userName', (req, res, next) => {
         const userName = req.params.userName;
         const word = req.body.word;
         const letters = req.body.letters;
@@ -398,7 +398,7 @@ sequelize.sync().then(() => {
     // 本当はDELETEメソッドを使いたいが、request-promiseでなぜかDELETEメソッドが使えなかったので
     // POSTで代用
     // FIXME
-    app.post('/hinemos/deleteLetterPair/:userName', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/deleteLetterPair/:userName', (req, res, next) => {
         const userName = req.params.userName;
         const letters = req.body.letters;
         const word = req.body.word;
@@ -466,56 +466,6 @@ sequelize.sync().then(() => {
         res.json(ans);
         res.status(200);
     });
-
-    // app.put('/hinemos/letterPair/:userName', (req, res, next) => {
-    //     const userName = req.params.userName;
-    //     const word = req.body.word;
-    //     const letters = req.body.letters;
-
-    //     if (!word || !letters) {
-    //         res.status(400).send(badRequestError);
-    //         return;
-    //     }
-
-    //     LetterPair.upsert({
-    //         userName,
-    //         word,
-    //         letters,
-    //     }).then((letterPair) => {
-    //         const ans = {
-    //             success: {
-    //                 code: 200,
-    //                 result: letterPair,
-    //             },
-    //         };
-    //         logger.emit('api.request', {
-    //             requestType: 'PUT',
-    //             endpoint: '/hinemos/letterPair/' + userName,
-    //             params: {
-    //                 word,
-    //                 letters,
-    //             },
-    //             status: 'success',
-    //             code: 200,
-    //             msg: '',
-    //         });
-    //         res.json(ans);
-    //         res.status(200);
-    //     }, () => {
-    //         logger.emit('api.request', {
-    //             requestType: 'PUT',
-    //             endpoint: '/hinemos/letterPair/' + userName,
-    //             params: {
-    //                 word,
-    //                 letters,
-    //             },
-    //             status: 'error',
-    //             code: 400,
-    //             msg: '',
-    //         });
-    //         res.status(400).send(badRequestError);
-    //     });
-    // });
 
     app.listen(process.env.EXPRESS_PORT);
 });
