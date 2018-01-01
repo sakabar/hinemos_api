@@ -1,5 +1,6 @@
 require('dotenv').config();
 const bodyParser = require('body-parser');
+const crypto = require("crypto");
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
@@ -39,6 +40,13 @@ const sequelize = new Sequelize(
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
 
+const getHashedPassword = (userName, password) => {
+    const sha512 = crypto.createHash('sha512');
+    sha512.update(userName + password, 'ascii');
+
+    return sha512.digest('hex');
+}
+
 // sequelize.sync({force: true}).then(() => {
 sequelize.sync().then(() => {
     const app = express();
@@ -56,7 +64,8 @@ sequelize.sync().then(() => {
 
     app.post(process.env.EXPRESS_ROOT + '/users', (req, res, next) => {
         const userName = req.body.userName;
-        const password = req.body.password;
+        const inputPassword = req.body.password;
+        const password = getHashedPassword(userName, inputPassword);
 
         User.create({
             userName,
@@ -106,7 +115,9 @@ sequelize.sync().then(() => {
 
     app.post(process.env.EXPRESS_ROOT + '/auth', (req, res, next) => {
         const userName = req.body.userName;
-        const password = req.body.password;
+        const inputPassword = req.body.password;
+        const password = getHashedPassword(userName, inputPassword);
+
 
         User.findOne({
             where: {
