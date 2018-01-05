@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bodyParser = require('body-parser');
-const crypto = require("crypto");
+const crypto = require('crypto');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
@@ -34,6 +34,7 @@ const sequelize = new Sequelize(
 
         // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
         operatorsAliases: false,
+        timezone: '+09:00',
     }
 );
 
@@ -45,7 +46,7 @@ const getHashedPassword = (userName, password) => {
     sha512.update(userName + password, 'ascii');
 
     return sha512.digest('hex');
-}
+};
 
 // sequelize.sync({force: true}).then(() => {
 sequelize.sync().then(() => {
@@ -117,7 +118,6 @@ sequelize.sync().then(() => {
         const userName = req.body.userName;
         const inputPassword = req.body.password;
         const password = getHashedPassword(userName, inputPassword);
-
 
         User.findOne({
             where: {
