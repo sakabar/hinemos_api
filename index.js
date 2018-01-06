@@ -51,7 +51,10 @@ const getHashedPassword = (userName, password) => {
 // sequelize.sync({force: true}).then(() => {
 sequelize.sync().then(() => {
     const app = express();
+
     app.use(bodyParser.urlencoded({
+        limit:'1mb', //データ量の上限
+        parameterLimit: 100000, //パラメータ数の上限
         extended: true,
     }));
 
@@ -235,7 +238,6 @@ sequelize.sync().then(() => {
         if (userName) {
             query.where.userName = userName;
         }
-        console.dir(query);
 
         LetterPair.findAll(query).then((result) => {
             logger.emit('api.request', {
@@ -450,73 +452,195 @@ sequelize.sync().then(() => {
     // 本当はDELETEメソッドを使いたいが、request-promiseでなぜかDELETEメソッドが使えなかったので
     // POSTで代用
     // FIXME
-    app.post(process.env.EXPRESS_ROOT + '/deleteLetterPair/:userName', (req, res, next) => {
-        const userName = req.params.userName;
+    app.post(process.env.EXPRESS_ROOT + '/deleteLetterPair', (req, res, next) => {
+        const userName = req.decoded.userName;
         const letters = req.body.letters;
         const word = req.body.word;
 
-        if ((req.decoded.userName !== userName) || (!letters && !word) || (letters && word)) {
-            let msg = '';
-            if (req.decoded.userName !== userName) {
-                msg += 'decoded userName conflicts! ';
-            }
-            if (!letters && !word) {
-                msg += 'both letters and word are empty. ';
-            }
-            if (letters && word) {
-                msg += 'both letters and word are not empty. ';
-            }
-
+        if (!userName) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/deleteLetterPair/' + userName,
+                endpoint: '/hinemos/deleteLetterPair',
                 params: {
+                    userName,
                     letters,
                     word,
                     decoded: req.decoded,
                 },
                 status: 'error',
                 code: 400,
-                msg,
+                msg: '',
             });
             res.status(400).send(badRequestError);
             return;
         }
 
-        if (letters) {
-            const query = { where: { userName, letters, }, };
-            LetterPair.destroy(query);
-        } else if (word) {
-            const query = { where: { userName, word, }, };
-            LetterPair.destroy(query);
-        }
-
-        const ans = {
-            success: {
-                code: 200,
-                result: {
-                    userName,
-                    letters,
-                    word,
-                },
-                msg: 'Deleted.',
+        let query = {
+            where: {
+                userName,
             },
         };
+        if (letters) {
+            query.where.letters = letters;
+        }
+        if (word) {
+            query.where.word = word;
+        }
 
-        logger.emit('api.request', {
-            requestType: 'POST',
-            endpoint: '/hinemos/deleteLetterPair/' + userName,
-            params: {
-                letters,
-                word,
-                decoded: req.decoded,
-            },
-            status: 'success',
-            code: 200,
-            msg: '',
-        });
-        res.json(ans);
-        res.status(200);
+        LetterPair
+            .destroy(query)
+            .then((result) => {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/deleteLetterPair',
+                    params: {
+                        userName,
+                        letters,
+                        word,
+                        decoded: req.decoded,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch((err) => {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/deleteLetterPair',
+                    params: {
+                        userName,
+                        letters,
+                        word,
+                        decoded: req.decoded,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+                res.status(400).send(badRequestError);
+            });
+    });
+
+    app.post(process.env.EXPRESS_ROOT + '/letterPairTable', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const letterPairTable = req.body.letterPairTable;
+
+        if (!userName || !letterPairTable) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/letterPairTable',
+                params: {
+                    userName,
+                    // letterPairTable,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        sequelize
+            .transaction((t) => {
+                // まず今のletterPairを消す
+                return LetterPair
+                    .destroy({
+                        where: {
+                            userName,
+                        },
+                    }, {
+                        transaction: t,
+                    })
+                    .then((result) => {
+                        // 次に、UIの表から入力されたの情報で更新
+                        let promises = [];
+                        for (let i = 0; i < letterPairTable.length; i++) {
+                            const words = letterPairTable[i].words;
+                            for (let k = 0; k < words.length; k++) {
+                                const letters = letterPairTable[i].letters;
+                                const word = letterPairTable[i].words[k];
+
+                                const instance = {
+                                    userName,
+                                    word,
+                                    letters,
+                                };
+
+                                promises.push(
+                                    LetterPair
+                                        .create(instance, {
+                                            transaction: t,
+                                        }));
+                            }
+                        }
+
+                       return  Promise.all(promises)
+                            .then((result) => {
+                                return 200;
+                            })
+                            .catch((err) => {
+                                throw new Error('error');
+                            });
+                    })
+                    .catch((err) => {
+                        throw new Error('error');
+                    });
+            })
+            .then((result) => {
+                if (result === 200){
+                    logger.emit('api.request', {
+                        requestType: 'POST',
+                        endpoint: '/hinemos/letterPairTable',
+                        params: {
+                            userName,
+                            // letterPairTable,
+                            decoded: req.decoded,
+                        },
+                        status: 'success',
+                        code: 200,
+                        msg: '',
+                    });
+
+                    const ans = {
+                        success: {
+                            code: 200,
+                            result,
+                        },
+                    };
+                    res.json(ans);
+                    res.status(200);
+                } else {
+                    throw new Error('error');
+                }
+            })
+            .catch((err) => {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/letterPairTable',
+                    params: {
+                        userName,
+                        // letterPairTable,
+                        decoded: req.decoded,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: err,
+                });
+
+                res.status(400).send(badRequestError);
+            });
     });
 
     app.listen(process.env.EXPRESS_PORT);
