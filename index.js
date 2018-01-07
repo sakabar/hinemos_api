@@ -40,6 +40,7 @@ const sequelize = new Sequelize(
 
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
+const LetterPairQuizLog = sequelize.import(path.join(__dirname, '/src/model/letterPairQuizLog'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -278,6 +279,84 @@ sequelize.sync().then(() => {
         });
     });
 
+    // 今のところの構想
+    // /letterPair を使う代わりに、letterPairQuizLogの情報を使って引っ張ってくる
+    // 遅いものをやるとか、正解率が低いものをやるとか
+    // orderByできる
+    // asc、desc
+    // まずは正解数が少ない順に取るか
+    // select user_name, letters, sum(is_recalled) as ok, count(*) as cnt, avg(sec) as avg_sec from letter_pair_quiz_log group by user_name, letters order by ok ASC;
+    // select * from letter_pair_quiz_log order by
+    app.get(process.env.EXPRESS_ROOT + '/letterPairQuizLog/:userName', (req, res, next) => {
+        const userName = req.params.userName;
+        if (!userName) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/letterPairQuizLog/'+ userName,
+                params: {
+                    body: req.body,
+                    query: req.query,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            return res.status(400).send({
+                error: {
+                    code: 400,
+                },
+            });
+        }
+
+        LetterPairQuizLog
+            .findAll({
+                attributes: [
+                    'user_name',
+                    'letters',
+                    [sequelize.fn('SUM', sequelize.col('is_recalled')), 'ok_cnt'],
+                    [sequelize.fn('COUNT', sequelize.col('*')), 'cnt'],
+                    [sequelize.fn('AVG', sequelize.col('sec')), 'avg_sec'],
+                ],
+                where: {
+                    userName
+                },
+                group: ['user_name', 'letters',],
+                order: [
+                    [sequelize.fn('SUM', sequelize.col('is_recalled')), 'ASC'],
+                ],
+            })
+            .then((result) => {
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    }
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch((err) => {
+                console.dir(err);
+
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/letterPairQuizLog/'+ userName,
+                    params: {
+                        body: req.body,
+                        query: req.query,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+                return res.status(400).send({
+                    error: {
+                        code: 400,
+                    },
+                });
+            });
+    });
+
     // Authentification Filter
     app.use((req, res, next) => {
         // get token from body:token or query:token of Http Header:x-access-token
@@ -383,7 +462,7 @@ sequelize.sync().then(() => {
             return;
         }
 
-        const words = inputWord.replace(/\s/, '').split(/[,，、/／]/).filter(x => x.length > 0);
+        const words = inputWord.replace(/\s/g, '').split(/[,，、/／]/).filter(x => x.length > 0);
         let promises = [];
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
@@ -641,6 +720,71 @@ sequelize.sync().then(() => {
 
                 res.status(400).send(badRequestError);
             });
+    });
+
+    app.post(process.env.EXPRESS_ROOT + '/letterPairQuizLog', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const letters = req.body.letters;
+        const isRecalled = req.body.isRecalled;
+        const sec = req.body.sec;
+
+        const badRequestError = {
+            error: {
+                message: 'Bad Request',
+                code: 400,
+            },
+        };
+
+        if (!userName || !letters || !isRecalled) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/letterPairQuizLog',
+                params: {
+                    userName,
+                    letters,
+                    isRecalled,
+                    sec,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        LetterPairQuizLog.create({
+            userName,
+            letters,
+            isRecalled,
+            sec,
+        }).then((letterPairQuizLogResult) => {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/letterPairQuizLog',
+                params: {
+                    userName,
+                    letters,
+                    isRecalled,
+                    sec,
+                    decoded: req.decoded,
+                },
+                status: 'success',
+                code: 200,
+                msg: '',
+            });
+
+            const ans = {
+                success: {
+                    code: 200,
+                    result: letterPairQuizLogResult,
+                },
+            };
+
+            res.json(ans);
+            res.status(200);
+        });
     });
 
     app.listen(process.env.EXPRESS_PORT);
