@@ -294,6 +294,7 @@ sequelize.sync().then(() => {
                 requestType: 'GET',
                 endpoint: '/hinemos/letterPairQuizLog/' + userName,
                 params: {
+                    userName,
                     body: req.body,
                     query: req.query,
                 },
@@ -351,12 +352,11 @@ sequelize.sync().then(() => {
                 res.status(200);
             })
             .catch((err) => {
-                console.dir(err);
-
                 logger.emit('api.request', {
                     requestType: 'GET',
                     endpoint: '/hinemos/letterPairQuizLog/' + userName,
                     params: {
+                        userName,
                         body: req.body,
                         query: req.query,
                     },
@@ -423,6 +423,7 @@ sequelize.sync().then(() => {
                 requestType: 'USE',
                 endpoint: '/hinemos/auth-filter',
                 params: {
+                    userName: decoded.userName,
                     body: req.body,
                     query: req.query,
                 },
@@ -438,7 +439,9 @@ sequelize.sync().then(() => {
         logger.emit('api.request', {
             requestType: 'USE',
             endpoint: '/hinemos/checkAuth',
-            params: {},
+            params: {
+                userName: req.decoded.userName,
+            },
             status: 'success',
             code: 200,
             msg: '',
@@ -464,6 +467,7 @@ sequelize.sync().then(() => {
                 requestType: 'POST',
                 endpoint: '/hinemos/letterPair/' + userName,
                 params: {
+                    userName,
                     word: inputWord,
                     letters,
                     decoded: req.decoded,
