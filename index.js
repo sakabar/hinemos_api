@@ -639,7 +639,6 @@ sequelize.sync().then(() => {
                         where: {
                             userName,
                         },
-                    }, {
                         transaction: t,
                     })
                     .then((result) => {
