@@ -54,8 +54,8 @@ sequelize.sync().then(() => {
     const app = express();
 
     app.use(bodyParser.urlencoded({
-        limit:'1mb', //データ量の上限
-        parameterLimit: 100000, //パラメータ数の上限
+        limit: '1mb', // データ量の上限
+        parameterLimit: 100000, // パラメータ数の上限
         extended: true,
     }));
 
@@ -292,7 +292,7 @@ sequelize.sync().then(() => {
         if (!userName) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/letterPairQuizLog/'+ userName,
+                endpoint: '/hinemos/letterPairQuizLog/' + userName,
                 params: {
                     body: req.body,
                     query: req.query,
@@ -313,16 +313,31 @@ sequelize.sync().then(() => {
                 attributes: [
                     'user_name',
                     'letters',
-                    [sequelize.fn('SUM', sequelize.col('is_recalled')), 'ok_cnt'],
-                    [sequelize.fn('COUNT', sequelize.col('*')), 'cnt'],
-                    [sequelize.fn('AVG', sequelize.col('sec')), 'avg_sec'],
+                    [
+                        sequelize.fn('SUM', sequelize.col('is_recalled')),
+                        'ok_cnt',
+                    ],
+                    [
+                        sequelize.fn('COUNT', sequelize.col('*')),
+                        'cnt',
+                    ],
+                    [
+                        sequelize.fn('AVG', sequelize.col('sec')),
+                        'avg_sec',
+                    ],
                 ],
                 where: {
-                    userName
+                    userName,
                 },
-                group: ['user_name', 'letters',],
+                group: [
+                    'user_name',
+                    'letters',
+                ],
                 order: [
-                    [sequelize.fn('SUM', sequelize.col('is_recalled')), 'ASC'],
+                    [
+                        sequelize.fn('SUM', sequelize.col('is_recalled')),
+                        'ASC',
+                    ],
                 ],
             })
             .then((result) => {
@@ -330,7 +345,7 @@ sequelize.sync().then(() => {
                     success: {
                         code: 200,
                         result,
-                    }
+                    },
                 };
                 res.json(ans);
                 res.status(200);
@@ -340,7 +355,7 @@ sequelize.sync().then(() => {
 
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/letterPairQuizLog/'+ userName,
+                    endpoint: '/hinemos/letterPairQuizLog/' + userName,
                     params: {
                         body: req.body,
                         query: req.query,
@@ -664,7 +679,7 @@ sequelize.sync().then(() => {
                             }
                         }
 
-                       return  Promise.all(promises)
+                        return Promise.all(promises)
                             .then((result) => {
                                 return 200;
                             })
@@ -677,7 +692,7 @@ sequelize.sync().then(() => {
                     });
             })
             .then((result) => {
-                if (result === 200){
+                if (result === 200) {
                     logger.emit('api.request', {
                         requestType: 'POST',
                         endpoint: '/hinemos/letterPairTable',
