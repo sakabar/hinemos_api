@@ -54,8 +54,8 @@ sequelize.sync().then(() => {
     const app = express();
 
     app.use(bodyParser.urlencoded({
-        limit:'1mb', //データ量の上限
-        parameterLimit: 100000, //パラメータ数の上限
+        limit: '1mb', // データ量の上限
+        parameterLimit: 100000, // パラメータ数の上限
         extended: true,
     }));
 
@@ -292,8 +292,9 @@ sequelize.sync().then(() => {
         if (!userName) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/letterPairQuizLog/'+ userName,
+                endpoint: '/hinemos/letterPairQuizLog/' + userName,
                 params: {
+                    userName,
                     body: req.body,
                     query: req.query,
                 },
@@ -313,16 +314,31 @@ sequelize.sync().then(() => {
                 attributes: [
                     'user_name',
                     'letters',
-                    [sequelize.fn('SUM', sequelize.col('is_recalled')), 'ok_cnt'],
-                    [sequelize.fn('COUNT', sequelize.col('*')), 'cnt'],
-                    [sequelize.fn('AVG', sequelize.col('sec')), 'avg_sec'],
+                    [
+                        sequelize.fn('SUM', sequelize.col('is_recalled')),
+                        'ok_cnt',
+                    ],
+                    [
+                        sequelize.fn('COUNT', sequelize.col('*')),
+                        'cnt',
+                    ],
+                    [
+                        sequelize.fn('AVG', sequelize.col('sec')),
+                        'avg_sec',
+                    ],
                 ],
                 where: {
-                    userName
+                    userName,
                 },
-                group: ['user_name', 'letters',],
+                group: [
+                    'user_name',
+                    'letters',
+                ],
                 order: [
-                    [sequelize.fn('SUM', sequelize.col('is_recalled')), 'ASC'],
+                    [
+                        sequelize.fn('SUM', sequelize.col('is_recalled')),
+                        'ASC',
+                    ],
                 ],
             })
             .then((result) => {
@@ -330,18 +346,17 @@ sequelize.sync().then(() => {
                     success: {
                         code: 200,
                         result,
-                    }
+                    },
                 };
                 res.json(ans);
                 res.status(200);
             })
-            .catch((err) => {
-                console.dir(err);
-
+            .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/letterPairQuizLog/'+ userName,
+                    endpoint: '/hinemos/letterPairQuizLog/' + userName,
                     params: {
+                        userName,
                         body: req.body,
                         query: req.query,
                     },
@@ -408,6 +423,7 @@ sequelize.sync().then(() => {
                 requestType: 'USE',
                 endpoint: '/hinemos/auth-filter',
                 params: {
+                    userName: decoded.userName,
                     body: req.body,
                     query: req.query,
                 },
@@ -423,7 +439,9 @@ sequelize.sync().then(() => {
         logger.emit('api.request', {
             requestType: 'USE',
             endpoint: '/hinemos/checkAuth',
-            params: {},
+            params: {
+                userName: req.decoded.userName,
+            },
             status: 'success',
             code: 200,
             msg: '',
@@ -449,6 +467,7 @@ sequelize.sync().then(() => {
                 requestType: 'POST',
                 endpoint: '/hinemos/letterPair/' + userName,
                 params: {
+                    userName,
                     word: inputWord,
                     letters,
                     decoded: req.decoded,
@@ -592,7 +611,7 @@ sequelize.sync().then(() => {
                 res.json(ans);
                 res.status(200);
             })
-            .catch((err) => {
+            .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'POST',
                     endpoint: '/hinemos/deleteLetterPair',
@@ -660,24 +679,35 @@ sequelize.sync().then(() => {
                                     LetterPair
                                         .create(instance, {
                                             transaction: t,
+                                        })
+                                        .then((result) => {
+                                            return {
+                                                code: 200,
+                                                params: instance,
+                                                msg: 'OK',
+                                            };
+                                        })
+                                        .catch(() => {
+                                            const msg = '『ひらがな「' + String(instance.letters) + '」に単語「' + String(instance.word) + '」を割り当てようとしたところ、エラーが発生しました。』';
+                                            throw new Error(msg);
                                         }));
                             }
                         }
 
-                       return  Promise.all(promises)
+                        return Promise.all(promises)
                             .then((result) => {
                                 return 200;
                             })
                             .catch((err) => {
-                                throw new Error('error');
+                                throw new Error(err);
                             });
                     })
                     .catch((err) => {
-                        throw new Error('error');
+                        throw new Error(err);
                     });
             })
             .then((result) => {
-                if (result === 200){
+                if (result === 200) {
                     logger.emit('api.request', {
                         requestType: 'POST',
                         endpoint: '/hinemos/letterPairTable',
@@ -717,7 +747,14 @@ sequelize.sync().then(() => {
                     msg: err,
                 });
 
-                res.status(400).send(badRequestError);
+                const badRequestErrorWithParams = {
+                    error: {
+                        code: 400,
+                        message: 'Bad Request: ' + err,
+                    },
+                };
+
+                res.status(400).send(badRequestErrorWithParams);
             });
     });
 
