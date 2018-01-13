@@ -351,7 +351,7 @@ sequelize.sync().then(() => {
                 res.json(ans);
                 res.status(200);
             })
-            .catch((err) => {
+            .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
                     endpoint: '/hinemos/letterPairQuizLog/' + userName,
@@ -611,7 +611,7 @@ sequelize.sync().then(() => {
                 res.json(ans);
                 res.status(200);
             })
-            .catch((err) => {
+            .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'POST',
                     endpoint: '/hinemos/deleteLetterPair',
@@ -687,7 +687,7 @@ sequelize.sync().then(() => {
                                                 msg: 'OK',
                                             };
                                         })
-                                        .catch((err) => {
+                                        .catch(() => {
                                             const msg = '『ひらがな「' + String(instance.letters) + '」に単語「' + String(instance.word) + '」を割り当てようとしたところ、エラーが発生しました。』';
                                             throw new Error(msg);
                                         }));
