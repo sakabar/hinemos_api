@@ -679,6 +679,17 @@ sequelize.sync().then(() => {
                                     LetterPair
                                         .create(instance, {
                                             transaction: t,
+                                        })
+                                        .then((result) => {
+                                            return {
+                                                code: 200,
+                                                params: instance,
+                                                msg: 'OK',
+                                            };
+                                        })
+                                        .catch((err) => {
+                                            const msg = '『ひらがな「' + String(instance.letters) + '」に単語「' + String(instance.word) + '」を割り当てようとしたところ、エラーが発生しました。』';
+                                            throw new Error(msg);
                                         }));
                             }
                         }
@@ -688,11 +699,11 @@ sequelize.sync().then(() => {
                                 return 200;
                             })
                             .catch((err) => {
-                                throw new Error('error');
+                                throw new Error(err);
                             });
                     })
                     .catch((err) => {
-                        throw new Error('error');
+                        throw new Error(err);
                     });
             })
             .then((result) => {
@@ -736,7 +747,14 @@ sequelize.sync().then(() => {
                     msg: err,
                 });
 
-                res.status(400).send(badRequestError);
+                const badRequestErrorWithParams = {
+                    error: {
+                        code: 400,
+                        message: 'Bad Request: ' + err,
+                    },
+                };
+
+                res.status(400).send(badRequestErrorWithParams);
             });
     });
 
