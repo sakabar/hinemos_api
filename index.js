@@ -771,7 +771,7 @@ sequelize.sync().then(() => {
             },
         };
 
-        if (!userName || !letters || !isRecalled) {
+        if (!userName || !letters || !isRecalled || !sec) {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/letterPairQuizLog',
