@@ -42,6 +42,11 @@ const sequelize = new Sequelize(
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
 const LetterPairQuizLog = sequelize.import(path.join(__dirname, '/src/model/letterPairQuizLog'));
+const ThreeStyleCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleCorner'));
+const NumberingCorner = sequelize.import(path.join(__dirname, '/src/model/numberingCorner'));
+const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
+// const ThreeStyleEdge = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdge'));
+// const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/numberingEdgeMiddle'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -377,6 +382,240 @@ sequelize.sync().then(() => {
             });
     });
 
+    app.get(process.env.EXPRESS_ROOT + '/threeStyle/corner', (req, res, next) => {
+        const userName = req.query.userName;
+        const buffer = req.query.buffer;
+        const sticker1 = req.query.sticker1;
+        const sticker2 = req.query.sticker2;
+        // const setup = req.query.setup;
+        // const move1 = req.query.move1;
+        // const move2 = req.query.move2;
+
+        let query = {
+            where: {},
+        };
+        if (userName) {
+            query.where.userName = userName;
+        }
+        if (buffer) {
+            query.where.buffer = buffer;
+        }
+        if (sticker1) {
+            query.where.sticker1 = sticker1;
+        }
+        if (sticker2) {
+            query.where.sticker2 = sticker2;
+        }
+
+        ThreeStyleCorner
+            .findAll(query)
+            .then((result) => {
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyle/corner',
+                    params: {
+                        userName,
+                        buffer,
+                        sticker1,
+                        sticker2,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                res.json(ans);
+                res.status(200);
+            })
+            .catch((err) => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyle/corner',
+                    params: {
+                        userName,
+                        buffer,
+                        sticker1,
+                        sticker2,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: err,
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
+    // あるユーザのナンバリングを取得
+    // あるステッカーのナンバリングについて、全ユーザの分布を調べたりするためには、
+    // 別のAPIが必要
+    app.get(process.env.EXPRESS_ROOT + '/numbering/corner/:userName', (req, res, next) => {
+        const userName = req.params.userName;
+        const letters = req.query.letters;
+
+        if (!userName) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/numbering/corner',
+                params: {
+                    userName,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        let query = {
+            where: {
+                userName,
+            },
+        };
+        if (letters) {
+            query.where.letter = letters.split(/(.)/).filter(x => x);
+        }
+
+        return NumberingCorner
+            .findAll(query)
+            .then((result) => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/numbering/corner',
+                    params: {
+                        userName,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch(() => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/numbering/corner',
+                    params: {
+                        userName,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
+    app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/corner/:userName', (req, res, next) => {
+        const userName = req.params.userName;
+
+        if (!userName) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                params: {
+                    userName,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        const query = {
+            attributes: [
+                'user_name',
+                'buffer',
+                'sticker1',
+                'sticker2',
+                'stickers',
+                [
+                    sequelize.fn('AVG', sequelize.col('sec')),
+                    'avg_sec',
+                ],
+            ],
+            where: {
+                userName,
+                // 最近の記録のみ使用
+                createdAt: {
+                    [Op.gt]: new Date(new Date() - process.env.THREE_STYLE_QUIZ_LOG_RECENT),
+                },
+            },
+            group: [
+                'user_name',
+                'buffer',
+                'sticker1',
+                'sticker2',
+                'stickers',
+            ],
+            order: [
+                [
+                    sequelize.fn('AVG', sequelize.col('sec')),
+                    'DESC',
+                ],
+            ],
+        };
+
+        return ThreeStyleQuizLogCorner
+            .findAll(query)
+            .then((result) => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyleQuizLog/corner',
+                    params: {
+                        userName,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch(() => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyleQuizLog/corner',
+                    params: {
+                        userName,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
     // Authentification Filter
     app.use((req, res, next) => {
         // get token from body:token or query:token of Http Header:x-access-token
@@ -463,11 +702,14 @@ sequelize.sync().then(() => {
     });
 
     app.post(process.env.EXPRESS_ROOT + '/letterPair/:userName', (req, res, next) => {
+        const hiraganas = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'.split(/(.{1})/).filter(x => x);
+
         const userName = req.params.userName;
         const inputWord = req.body.word;
         const letters = req.body.letters;
 
-        if ((req.decoded.userName !== userName) || !inputWord || !letters) {
+        const lettersOk = letters.split(/(.)/).filter(x => x).every(ch => hiraganas.includes(ch));
+        if ((req.decoded.userName !== userName) || !inputWord || !letters || !lettersOk) {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/letterPair/' + userName,
@@ -820,6 +1062,317 @@ sequelize.sync().then(() => {
                 success: {
                     code: 200,
                     result: letterPairQuizLogResult,
+                },
+            };
+
+            res.json(ans);
+            res.status(200);
+        });
+    });
+
+    // "Lw'2 => Lw"
+    // FIXME: test this
+    const getMoveType = (moveStr) => {
+        if (!moveStr) {
+            return '';
+        }
+
+        const m = moveStr.match(/([A-Za-z]+)'?[2]?/);
+        if (m) {
+            return m[1];
+        } else {
+            return '';
+        }
+    };
+
+    const getNumberOfOverlappedMoves = (setupArr, move1Arr, move2Arr) => {
+        let ans = 0;
+
+        const setupLn = setupArr.length;
+        const move2Ln = move2Arr.length;
+
+        // セットアップの最後とmove1の最初のキャンセル
+        if (getMoveType(setupArr[setupLn - 1]) === getMoveType(move1Arr[0])) {
+            ans += 1;
+        }
+
+        // move2の逆手順の最後と逆セットアップのキャンセル
+        if (getMoveType(move2Arr[move2Ln - 1]) === getMoveType(setupArr[setupLn - 1])) {
+            ans += 1;
+        }
+        return ans;
+    };
+
+    app.post(process.env.EXPRESS_ROOT + '/threeStyle/corner', (req, res, next) => {
+        const buffer = req.body.buffer.replace(/\s*$/, '').replace(/^\s*/, '');
+        const sticker1 = req.body.sticker1.replace(/\s*$/, '').replace(/^\s*/, '');
+        const sticker2 = req.body.sticker2.replace(/\s*$/, '').replace(/^\s*/, '');
+        const setup = req.body.setup.replace(/\s*$/, '').replace(/^\s*/, '');
+        const move1 = req.body.move1.replace(/\s*$/, '').replace(/^\s*/, '');
+        const move2 = req.body.move2.replace(/\s*$/, '').replace(/^\s*/, '');
+        const userName = req.decoded.userName;
+
+        // setupはNULLでもOK
+        if (!userName || !buffer || !sticker1 || !sticker2 || !move1 || !move2) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/threeStyle/corner',
+                params: {
+                    buffer,
+                    sticker1,
+                    sticker2,
+                    setup,
+                    move1,
+                    move2,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        const setupArr = setup.split(' ').filter(x => x);
+        const setupLn = setupArr.length;
+
+        const move1Arr = move1.split(' ').filter(x => x);
+        const move1Ln = move1Arr.length;
+
+        const move2Arr = move2.split(' ').filter(x => x);
+        const move2Ln = move2Arr.length;
+
+        const overlapped = getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
+        const numberOfMoves = (setupLn + move1Ln + move2Ln) * 2 - overlapped;
+
+        const stickers = buffer + ' ' + sticker1 + ' ' + sticker2;
+
+        ThreeStyleCorner
+            .create({
+                userName,
+                numberOfMoves,
+                buffer,
+                sticker1,
+                sticker2,
+                stickers,
+                setup,
+                move1,
+                move2,
+            })
+            .then((result) => {
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/threeStyle/corner',
+                    params: {
+                        buffer,
+                        sticker1,
+                        sticker2,
+                        setup,
+                        move1,
+                        move2,
+                        decoded: req.decoded,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+                res.json(ans);
+                res.status(200);
+            })
+            .catch((err) => {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/threeStyle/corner',
+                    params: {
+                        buffer,
+                        sticker1,
+                        sticker2,
+                        setup,
+                        move1,
+                        move2,
+                        decoded: req.decoded,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: err,
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
+    // 部分更新することは考えていないので、そのユーザのデータを全置き換え
+    app.post(process.env.EXPRESS_ROOT + '/numbering/corner', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const numberings = Array.from(new Set(req.body.numberings)); // [{sticker, numbering,}]
+
+        // ナンバリングで重複を排除した時に数が一致しないということは、重複が存在するということなのでNG
+        const uniqedLn = Array.from(new Set(numberings.map(x => x.letter))).length;
+        const assertCond = uniqedLn === numberings.length;
+
+        if (!userName || !numberings || !assertCond) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/numbering/corner',
+                params: {
+                    userName,
+                    numberings,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        sequelize
+            .transaction((t) => {
+                // まず今のnumberingを消す
+                return NumberingCorner
+                    .destroy({
+                        where: {
+                            userName,
+                        },
+                        transaction: t,
+                    })
+                    .then((result) => {
+                        // 次に、UIから入力された情報で更新
+                        let promises = [];
+                        for (let i = 0; i < numberings.length; i++) {
+                            const sticker = numberings[i].sticker;
+                            const letter = numberings[i].letter;
+                            const instance = {
+                                userName,
+                                sticker,
+                                letter,
+                            };
+
+                            promises.push(
+                                NumberingCorner
+                                    .create(instance, {
+                                        transaction: t,
+                                    })
+                                    .then((result) => {
+                                        return {
+                                            code: 200,
+                                            params: instance,
+                                            msg: 'OK',
+                                        };
+                                    }));
+                        }
+
+                        return Promise.all(promises)
+                            .then((ans) => {
+                                logger.emit('api.request', {
+                                    requestType: 'POST',
+                                    endpoint: '/hinemos/numbering/corner',
+                                    params: {
+                                        userName,
+                                        numberings,
+                                        decoded: req.decoded,
+                                    },
+                                    status: 'success',
+                                    code: 200,
+                                    msg: '',
+                                });
+
+                                res.json(ans);
+                                res.status(200);
+                            })
+                            .catch((err) => {
+                                logger.emit('api.request', {
+                                    requestType: 'POST',
+                                    endpoint: '/hinemos/numbering/corner',
+                                    params: {
+                                        userName,
+                                        numberings,
+                                        decoded: req.decoded,
+                                    },
+                                    status: 'erorr',
+                                    code: 400,
+                                    msg: err,
+                                });
+
+                                res.status(400).send(badRequestError);
+                            });
+                    });
+            });
+    });
+
+    app.post(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/corner', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const buffer = req.body.buffer;
+        const sticker1 = req.body.sticker1;
+        const sticker2 = req.body.sticker2;
+        const usedHint = req.body.usedHint;
+        const isRecalled = req.body.isRecalled;
+        const sec = req.body.sec;
+
+        if (!userName || !buffer || !sticker1 || !sticker2 || !usedHint || !isRecalled || !sec) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                params: {
+                    userName,
+                    buffer,
+                    sticker1,
+                    sticker2,
+                    usedHint,
+                    isRecalled,
+                    sec,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        ThreeStyleQuizLogCorner.create({
+            userName,
+            buffer,
+            sticker1,
+            sticker2,
+            stickers: buffer + ' ' + sticker1 + ' ' + sticker2,
+            usedHint,
+            isRecalled,
+            sec,
+        }).then((threeStyleQuizLogResult) => {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                params: {
+                    userName,
+                    buffer,
+                    sticker1,
+                    sticker2,
+                    isRecalled,
+                    sec,
+                    decoded: req.decoded,
+                },
+                status: 'success',
+                code: 200,
+                msg: '',
+            });
+
+            const ans = {
+                success: {
+                    code: 200,
+                    result: threeStyleQuizLogResult,
                 },
             };
 
