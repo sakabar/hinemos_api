@@ -157,7 +157,7 @@ sequelize.sync().then(() => {
             }
 
             const token = jwt.sign({ userName, }, process.env.JWT_SECRET, {
-                expiresIn: '24h',
+                expiresIn: process.env.JWT_EXPIRE,
             });
 
             const ans = {
