@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
 const path = require('path');
 const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 // Fluentd
 logger.configure(process.env.FLUENTD_TAG, {
@@ -329,6 +330,10 @@ sequelize.sync().then(() => {
                 ],
                 where: {
                     userName,
+                    // 最近の記録のみ使用
+                    createdAt: {
+                        [Op.gt]: new Date(new Date() - process.env.LETTER_PAIR_QUIZ_LOG_RECENT),
+                    },
                 },
                 group: [
                     'user_name',
@@ -336,8 +341,8 @@ sequelize.sync().then(() => {
                 ],
                 order: [
                     [
-                        sequelize.fn('SUM', sequelize.col('is_recalled')),
-                        'ASC',
+                        sequelize.fn('AVG', sequelize.col('sec')),
+                        'DESC',
                     ],
                 ],
             })
