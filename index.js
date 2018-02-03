@@ -453,6 +453,127 @@ sequelize.sync().then(() => {
             });
     });
 
+    // lettersから3-styleを引く
+    app.get(process.env.EXPRESS_ROOT + '/threeStyleFromLetters/corner', (req, res, next) => {
+        const userName = req.query.userName;
+        const letters = req.query.letters;
+
+        if (!userName || !letters) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/threeStyleFromLetters/corner',
+                params: {
+                    userName,
+                    letters,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        const numberingQuery = {
+            where: {
+                userName,
+                letter: [ '@', ...letters.split(''), ],
+            },
+        };
+
+        return NumberingCorner
+            .findAll(numberingQuery)
+            .then((results) => {
+                // buffer, sticker1, sticker2 で 3
+                if (results.length !== 3) {
+                    logger.emit('api.request', {
+                        requestType: 'GET',
+                        endpoint: '/hinemos/threeStyleFromLetters/corner',
+                        params: {
+                            userName,
+                            letters,
+                        },
+                        status: 'error',
+                        code: 400,
+                        msg: '',
+                    });
+
+                    res.status(400).send(badRequestError);
+                    return;
+                }
+
+                const buffer = results.filter(x => x.letter === '@')[0].sticker;
+                const sticker1 = results.filter(x => x.letter === letters[0])[0].sticker;
+                const sticker2 = results.filter(x => x.letter === letters[1])[0].sticker;
+
+                const threeStyleQuery = {
+                    where: {
+                        userName,
+                        buffer,
+                        sticker1,
+                        sticker2,
+                    },
+                };
+
+                return ThreeStyleCorner
+                    .findAll(threeStyleQuery)
+                    .then((threeStyles) => {
+                        logger.emit('api.request', {
+                            requestType: 'GET',
+                            endpoint: '/hinemos/threeStyleFromLetters/corner',
+                            params: {
+                                userName,
+                                letters,
+                            },
+                            status: 'success',
+                            code: 200,
+                            msg: '',
+                        });
+
+                        const ans = {
+                            success: {
+                                code: 200,
+                                result: threeStyles,
+                            },
+                        };
+                        res.json(ans);
+                        res.status(200);
+                    })
+                    .catch((err) => {
+                        console.dir(err);
+                        logger.emit('api.request', {
+                            requestType: 'GET',
+                            endpoint: '/hinemos/threeStyleFromLetters/corner',
+                            params: {
+                                userName,
+                                letters,
+                            },
+                            status: 'error',
+                            code: 400,
+                            msg: '',
+                        });
+
+                        res.status(400).send(badRequestError);
+                    });
+            })
+            .catch(() => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyleFromLetters/corner',
+                    params: {
+                        userName,
+                        letters,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
     // あるユーザのナンバリングを取得
     // あるステッカーのナンバリングについて、全ユーザの分布を調べたりするためには、
     // 別のAPIが必要
