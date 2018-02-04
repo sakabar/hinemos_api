@@ -18,6 +18,131 @@ logger.emit('api.sys', {
     msg: 'start',
 });
 
+// letters単位でそれぞれ直近の3つまで取ってくる
+// 新しい順にソート済という想定
+// FIXME テスト書く
+const getRecentLetterPairQuizLogs = (quizLogs) => {
+    const avgNum = 3; // mo3
+    let ans = {};
+
+    // 新しい順に avgNum 個まで取ってくる
+    for (let i = 0; i < quizLogs.length; i++) {
+        const quizLog = quizLogs[i];
+        const letters = quizLog.letters;
+
+        const obj = {
+            userName: quizLog.userName,
+            letters,
+            sec: quizLog.sec,
+        };
+
+        if (!ans[letters]) {
+            ans[letters] = [ obj, ];
+        } else if (ans[letters].length < avgNum) {
+            ans[letters].push(obj);
+        }
+    }
+
+    // 平均を計算するのは、スキーマによって変わるので別のメソッドで行う
+    return ans;
+};
+
+// カラムは 'user_name', 'letters', avg('sec') の3つ
+// 1つのuserNameしか入っていないと仮定
+// キーはユニークであると仮定
+const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
+    const recent = getRecentLetterPairQuizLogs(quizLogs);
+    let ans = [];
+
+    for (let letters of Object.keys(recent)) {
+        const arr = recent[letters];
+        const userName = arr[0].userName;
+
+        const sumSec = arr.map(x => x.sec).reduce((acc, x) => acc + x);
+        const cnt = arr.length;
+        const avgSec = 1.0 * sumSec / cnt;
+
+        // スネークケースに戻す
+        const obj = {
+            'user_name': userName,
+            letters,
+            'avg_sec': avgSec,
+        };
+        ans.push(obj);
+    }
+
+    // avg_secの昇順でソートして返す
+    return ans.sort((a, b) => -(a['avg_sec'] - b['avg_sec']));
+};
+
+// FIXME 同じようなメソッドが2つ…
+// stickers単位でそれぞれ直近の3つまで取ってくる
+// 新しい順にソート済という想定
+// FIXME テスト書く
+const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
+    const avgNum = 3; // mo3
+    let ans = {};
+
+    // 新しい順に avgNum 個まで取ってくる
+    for (let i = 0; i < quizLogs.length; i++) {
+        const quizLog = quizLogs[i];
+        const stickers = quizLog.stickers;
+
+        const obj = {
+            userName: quizLog.userName,
+            buffer: quizLog.buffer,
+            sticker1: quizLog.sticker1,
+            sticker2: quizLog.sticker2,
+            stickers,
+            sec: quizLog.sec,
+        };
+
+        if (!ans[stickers]) {
+            ans[stickers] = [ obj, ];
+        } else if (ans[stickers].length < avgNum) {
+            ans[stickers].push(obj);
+        }
+    }
+
+    // 平均を計算するのは、スキーマによって変わるので別のメソッドで行う
+    return ans;
+};
+
+// FIXME ロジックが重複?
+// カラムは 'user_name', 'letters', avg('sec') の3つ
+// 1つのuserNameしか入っていないと仮定
+// キーはユニークであると仮定
+const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
+    const recent = getRecentThreeStyleCornerQuizLogs(quizLogs);
+    let ans = [];
+
+    for (let stickers of Object.keys(recent)) {
+        const arr = recent[stickers];
+        const userName = arr[0].userName;
+        const buffer = arr[0].buffer;
+        const sticker1 = arr[0].sticker1;
+        const sticker2 = arr[0].sticker2;
+
+        const sumSec = arr.map(x => x.sec).reduce((acc, x) => acc + x);
+        const cnt = arr.length;
+        const avgSec = 1.0 * sumSec / cnt;
+
+        // スネークケースに戻す
+        const obj = {
+            'user_name': userName,
+            buffer,
+            sticker1,
+            sticker2,
+            stickers,
+            'avg_sec': avgSec,
+        };
+        ans.push(obj);
+    }
+
+    // avg_secの昇順でソートして返す
+    return ans.sort((a, b) => -(a['avg_sec'] - b['avg_sec']));
+};
+
 const sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
@@ -285,14 +410,7 @@ sequelize.sync().then(() => {
         });
     });
 
-    // 今のところの構想
-    // /letterPair を使う代わりに、letterPairQuizLogの情報を使って引っ張ってくる
-    // 遅いものをやるとか、正解率が低いものをやるとか
-    // orderByできる
-    // asc、desc
-    // まずは正解数が少ない順に取るか
-    // select user_name, letters, sum(is_recalled) as ok, count(*) as cnt, avg(sec) as avg_sec from letter_pair_quiz_log group by user_name, letters order by ok ASC;
-    // select * from letter_pair_quiz_log order by
+    // 直近28日(envファイルで指定)の中で、直近の mean of 3 を計算
     app.get(process.env.EXPRESS_ROOT + '/letterPairQuizLog/:userName', (req, res, next) => {
         const userName = req.params.userName;
         if (!userName) {
@@ -315,23 +433,14 @@ sequelize.sync().then(() => {
             });
         }
 
+        // is_recallledは今のところ使わない
+        // mo3でis_recalledを計算しても、n/3で粗いのでやり方を考える必要がある
         LetterPairQuizLog
             .findAll({
                 attributes: [
-                    'user_name',
+                    [ 'user_name', 'userName', ],
                     'letters',
-                    [
-                        sequelize.fn('SUM', sequelize.col('is_recalled')),
-                        'ok_cnt',
-                    ],
-                    [
-                        sequelize.fn('COUNT', sequelize.col('*')),
-                        'cnt',
-                    ],
-                    [
-                        sequelize.fn('AVG', sequelize.col('sec')),
-                        'avg_sec',
-                    ],
+                    'sec',
                 ],
                 where: {
                     userName,
@@ -340,13 +449,9 @@ sequelize.sync().then(() => {
                         [Op.gt]: new Date(new Date() - process.env.LETTER_PAIR_QUIZ_LOG_RECENT),
                     },
                 },
-                group: [
-                    'user_name',
-                    'letters',
-                ],
                 order: [
                     [
-                        sequelize.fn('AVG', sequelize.col('sec')),
+                        'createdAt',
                         'DESC',
                     ],
                 ],
@@ -355,9 +460,23 @@ sequelize.sync().then(() => {
                 const ans = {
                     success: {
                         code: 200,
-                        result,
+                        result: calcRecentMo3OfLetterPairQuizLog(result),
                     },
                 };
+
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/letterPairQuizLog/' + userName,
+                    params: {
+                        userName,
+                        body: req.body,
+                        query: req.query,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
                 res.json(ans);
                 res.status(200);
             })
@@ -540,8 +659,7 @@ sequelize.sync().then(() => {
                         res.json(ans);
                         res.status(200);
                     })
-                    .catch((err) => {
-                        console.dir(err);
+                    .catch(() => {
                         logger.emit('api.request', {
                             requestType: 'GET',
                             endpoint: '/hinemos/threeStyleFromLetters/corner',
@@ -666,15 +784,12 @@ sequelize.sync().then(() => {
 
         const query = {
             attributes: [
-                'user_name',
+                [ 'user_name', 'userName', ],
                 'buffer',
                 'sticker1',
                 'sticker2',
                 'stickers',
-                [
-                    sequelize.fn('AVG', sequelize.col('sec')),
-                    'avg_sec',
-                ],
+                'sec',
             ],
             where: {
                 userName,
@@ -683,16 +798,9 @@ sequelize.sync().then(() => {
                     [Op.gt]: new Date(new Date() - process.env.THREE_STYLE_QUIZ_LOG_RECENT),
                 },
             },
-            group: [
-                'user_name',
-                'buffer',
-                'sticker1',
-                'sticker2',
-                'stickers',
-            ],
             order: [
                 [
-                    sequelize.fn('AVG', sequelize.col('sec')),
+                    'createdAt',
                     'DESC',
                 ],
             ],
@@ -715,7 +823,7 @@ sequelize.sync().then(() => {
                 const ans = {
                     success: {
                         code: 200,
-                        result,
+                        result: calcRecentMo3OfThreeStyleCornerQuizLog(result),
                     },
                 };
                 res.json(ans);
