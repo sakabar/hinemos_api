@@ -1610,5 +1610,79 @@ sequelize.sync().then(() => {
         });
     });
 
+    // 本当はDELETEメソッドを使いたいが、request-promiseでなぜかDELETEメソッドが使えなかったので
+    // POSTで代用
+    // FIXME
+    app.post(process.env.EXPRESS_ROOT + '/deleteThreeStyle/corner', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const id = req.body.id;
+
+        if (!userName) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/deleteThreeStyle/corner',
+                params: {
+                    userName,
+                    id,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        // リクエストしたユーザと、threeStyleを登録したユーザは一致している必要がある
+        let query = {
+            where: {
+                userName,
+                id,
+            },
+        };
+
+        ThreeStyleCorner
+            .destroy(query)
+            .then((result) => {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/deleteThreeStyle/corner',
+                    params: {
+                        userName,
+                        id,
+                        decoded: req.decoded,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch(() => {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/deleteThreeStyle/corner',
+                    params: {
+                        userName,
+                        id,
+                        decoded: req.decoded,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+                res.status(400).send(badRequestError);
+            });
+    });
+
     app.listen(process.env.EXPRESS_PORT);
 });
