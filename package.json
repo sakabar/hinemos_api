@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "eslint": "eslint index.js src/*",
+    "eslint": "eslint index.js src/lib/*.js src/model/*.js",
     "start": "node index.js",
-    "test": "mocha"
+    "test": "mocha test/lib/*.js"
   },
   "repository": {
     "type": "git",

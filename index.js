@@ -5,6 +5,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
 const path = require('path');
+const utils = require('./src/lib/utils');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
@@ -1299,39 +1300,6 @@ sequelize.sync().then(() => {
         });
     });
 
-    // "Lw'2 => Lw"
-    // FIXME: test this
-    const getMoveType = (moveStr) => {
-        if (!moveStr) {
-            return '';
-        }
-
-        const m = moveStr.match(/([A-Za-z]+)'?[2]?/);
-        if (m) {
-            return m[1];
-        } else {
-            return '';
-        }
-    };
-
-    const getNumberOfOverlappedMoves = (setupArr, move1Arr, move2Arr) => {
-        let ans = 0;
-
-        const setupLn = setupArr.length;
-        const move2Ln = move2Arr.length;
-
-        // セットアップの最後とmove1の最初のキャンセル
-        if (getMoveType(setupArr[setupLn - 1]) === getMoveType(move1Arr[0])) {
-            ans += 1;
-        }
-
-        // move2の逆手順の最後と逆セットアップのキャンセル
-        if (getMoveType(move2Arr[move2Ln - 1]) === getMoveType(setupArr[setupLn - 1])) {
-            ans += 1;
-        }
-        return ans;
-    };
-
     app.post(process.env.EXPRESS_ROOT + '/threeStyle/corner', (req, res, next) => {
         const buffer = req.body.buffer.replace(/\s*$/, '').replace(/^\s*/, '');
         const sticker1 = req.body.sticker1.replace(/\s*$/, '').replace(/^\s*/, '');
@@ -1341,8 +1309,10 @@ sequelize.sync().then(() => {
         const move2 = req.body.move2.replace(/\s*$/, '').replace(/^\s*/, '');
         const userName = req.decoded.userName;
 
-        // setupはNULLでもOK
-        if (!userName || !buffer || !sticker1 || !sticker2 || !move1 || !move2) {
+        const okCond1 = (move1 !== '' && move2 !== '');
+        const okCond2 = (move1 === '' && move2 === '' && setup !== '');
+
+        if (!userName || !buffer || !sticker1 || !sticker2 || !(okCond1 || okCond2)) {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/threeStyle/corner',
@@ -1364,18 +1334,7 @@ sequelize.sync().then(() => {
             return;
         }
 
-        const setupArr = setup.split(' ').filter(x => x);
-        const setupLn = setupArr.length;
-
-        const move1Arr = move1.split(' ').filter(x => x);
-        const move1Ln = move1Arr.length;
-
-        const move2Arr = move2.split(' ').filter(x => x);
-        const move2Ln = move2Arr.length;
-
-        const overlapped = getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
-        const numberOfMoves = (setupLn + move1Ln + move2Ln) * 2 - overlapped;
-
+        const numberOfMoves = utils.getNumberOfMoves(setup, move1, move2);
         const stickers = buffer + ' ' + sticker1 + ' ' + sticker2;
 
         ThreeStyleCorner
