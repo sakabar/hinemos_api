@@ -2,12 +2,12 @@ const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
     const corners = [
-        'UBL', 'UBR', 'UFR', 'UFL',
-        'RFU', 'RBU', 'RDF', 'RBD',
-        'LBU', 'LFU', 'LBD', 'LDF',
-        'FLU', 'FRU', 'FDL', 'FDR',
-        'BRU', 'BLU', 'BDR', 'BDL',
-        'DFR', 'DFL', 'DBR', 'DBL',
+        'BDL', 'BDR', 'BLU', 'BRU',
+        'DBL', 'DBR', 'DFL', 'DFR',
+        'FDL', 'FDR', 'FLU', 'FRU',
+        'LBD', 'LBU', 'LDF', 'LFU',
+        'RBD', 'RBU', 'RDF', 'RFU',
+        'UBL', 'UBR', 'UFL', 'UFR',
     ];
 
     const db = sequelize.define('numbering_corner', {
