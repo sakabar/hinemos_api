@@ -8,37 +8,37 @@ describe('utils.js', () => {
         });
 
         it('異常系: 入力が空の場合はエラー', () => {
-            assert.throws(() => { utils.getMoveType('') }, Error);
+            assert.throws(() => { utils.getMoveType(''); }, Error);
         });
 
         it('異常系: 想定しているパターンに一致しない', () => {
-            assert.throws(() => { utils.getMoveType('L L') }, Error);
+            assert.throws(() => { utils.getMoveType('L L'); }, Error);
         });
     });
 
     describe('getNumberOfOverlappedMoves', () => {
         it('正常系: setupなし', () => {
             const setupArr = [];
-            const move1Arr = ['U'];
-            const move2Arr = ['R', 'D', 'R\''];
+            const move1Arr = [ 'U', ];
+            const move2Arr = [ 'R', 'D', 'R\'', ];
             const expected = 0;
             const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
             assert.equal(actual, expected);
         });
 
         it('正常系: setupとmove1で重複', () => {
-            const setupArr = ['R'];
-            const move1Arr = ['R', 'D', 'R\''];
-            const move2Arr = ['U'];
+            const setupArr = [ 'R', ];
+            const move1Arr = [ 'R', 'D', 'R\'', ];
+            const move2Arr = [ 'U', ];
             const expected = 1;
             const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
             assert.equal(actual, expected);
         });
 
         it('正常系: setupとmove2で重複', () => {
-            const setupArr = ['R'];
-            const move1Arr = ['U'];
-            const move2Arr = ['R', 'D', 'R\''];
+            const setupArr = [ 'R', ];
+            const move1Arr = [ 'U', ];
+            const move2Arr = [ 'R', 'D', 'R\'', ];
             const expected = 1;
             const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
             assert.equal(actual, expected);
@@ -83,4 +83,3 @@ describe('utils.js', () => {
         });
     });
 });
-

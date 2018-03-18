@@ -172,7 +172,7 @@ const ThreeStyleCorner = sequelize.import(path.join(__dirname, '/src/model/three
 const NumberingCorner = sequelize.import(path.join(__dirname, '/src/model/numberingCorner'));
 const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
 // const ThreeStyleEdge = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdge'));
-// const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/numberingEdgeMiddle'));
+const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/numberingEdgeMiddle'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -696,15 +696,17 @@ sequelize.sync().then(() => {
     // あるユーザのナンバリングを取得
     // あるステッカーのナンバリングについて、全ユーザの分布を調べたりするためには、
     // 別のAPIが必要
-    app.get(process.env.EXPRESS_ROOT + '/numbering/corner/:userName', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/numbering/:part/:userName', (req, res, next) => {
+        const part = req.params.part;
         const userName = req.params.userName;
         const letters = req.query.letters;
 
-        if (!userName) {
+        if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/numbering/corner',
+                endpoint: '/hinemos/numbering/',
                 params: {
+                    part,
                     userName,
                 },
                 status: 'error',
@@ -725,13 +727,22 @@ sequelize.sync().then(() => {
             query.where.letter = letters.split(/(.)/).filter(x => x);
         }
 
-        return NumberingCorner
+        // cornerかedgeMiddle以外の場合、既にハジかれている
+        let numberingModel;
+        if (part === 'corner') {
+            numberingModel = NumberingCorner;
+        } else if (part === 'edgeMiddle') {
+            numberingModel = NumberingEdgeMiddle;
+        }
+
+        return numberingModel
             .findAll(query)
             .then((result) => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/numbering/corner',
+                    endpoint: '/hinemos/numbering/',
                     params: {
+                        part,
                         userName,
                     },
                     status: 'success',
@@ -751,8 +762,9 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/numbering/corner',
+                    endpoint: '/hinemos/numbering/',
                     params: {
+                        part,
                         userName,
                     },
                     status: 'error',
@@ -1138,7 +1150,7 @@ sequelize.sync().then(() => {
                         transaction: t,
                     })
                     .then((result) => {
-                        // 次に、UIの表から入力されたの情報で更新
+                        // 次に、UIの表から入力された情報で更新
                         let promises = [];
                         for (let i = 0; i < letterPairTable.length; i++) {
                             const words = letterPairTable[i].words;
@@ -1399,7 +1411,8 @@ sequelize.sync().then(() => {
     });
 
     // 部分更新することは考えていないので、そのユーザのデータを全置き換え
-    app.post(process.env.EXPRESS_ROOT + '/numbering/corner', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/numbering/:part/', (req, res, next) => {
+        const part = req.params.part;
         const userName = req.decoded.userName;
         const numberings = Array.from(new Set(req.body.numberings)); // [{sticker, numbering,}]
 
@@ -1407,11 +1420,12 @@ sequelize.sync().then(() => {
         const uniqedLn = Array.from(new Set(numberings.map(x => x.letter))).length;
         const assertCond = uniqedLn === numberings.length;
 
-        if (!userName || !numberings || !assertCond) {
+        if (!userName || !req.body.numberings || uniqedLn === 0 || !assertCond || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/numbering/corner',
+                endpoint: '/hinemos/numbering/',
                 params: {
+                    part,
                     userName,
                     numberings,
                     decoded: req.decoded,
@@ -1425,10 +1439,17 @@ sequelize.sync().then(() => {
             return;
         }
 
+        let numberingModel;
+        if (part === 'corner') {
+            numberingModel = NumberingCorner;
+        } else if (part === 'edgeMiddle') {
+            numberingModel = NumberingEdgeMiddle;
+        }
+
         sequelize
             .transaction((t) => {
                 // まず今のnumberingを消す
-                return NumberingCorner
+                return numberingModel
                     .destroy({
                         where: {
                             userName,
@@ -1448,7 +1469,7 @@ sequelize.sync().then(() => {
                             };
 
                             promises.push(
-                                NumberingCorner
+                                numberingModel
                                     .create(instance, {
                                         transaction: t,
                                     })
@@ -1465,8 +1486,9 @@ sequelize.sync().then(() => {
                             .then((ans) => {
                                 logger.emit('api.request', {
                                     requestType: 'POST',
-                                    endpoint: '/hinemos/numbering/corner',
+                                    endpoint: '/hinemos/numbering/',
                                     params: {
+                                        part,
                                         userName,
                                         numberings,
                                         decoded: req.decoded,
@@ -1482,8 +1504,9 @@ sequelize.sync().then(() => {
                             .catch((err) => {
                                 logger.emit('api.request', {
                                     requestType: 'POST',
-                                    endpoint: '/hinemos/numbering/corner',
+                                    endpoint: '/hinemos/numbering/',
                                     params: {
+                                        part,
                                         userName,
                                         numberings,
                                         decoded: req.decoded,
