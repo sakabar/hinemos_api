@@ -2,12 +2,12 @@ const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
     const edges = [
-        'UR', 'UB', 'UL', 'UF',
-        'RF', 'RU', 'RB', 'RD',
-        'LF', 'LU', 'LB', 'LD',
-        'FU', 'FR', 'FD', 'FL',
-        'BR', 'BU', 'BL', 'BD',
-        'DR', 'DF', 'DL', 'DB',
+        'BD', 'BL', 'BR', 'BU',
+        'DB', 'DF', 'DL', 'DR',
+        'FD', 'FL', 'FR', 'FU',
+        'LB', 'LD', 'LF', 'LU',
+        'RB', 'RD', 'RF', 'RU',
+        'UB', 'UF', 'UL', 'UR',
     ];
 
     const db = sequelize.define('numbering_edge_middle', {

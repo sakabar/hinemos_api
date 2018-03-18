@@ -1,5 +1,9 @@
 module.exports = {
     "extends": "standard",
+    "globals": {
+        "describe": true,
+        "it": true,
+    },
     "rules": {
         "indent": [
             "error",
