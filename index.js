@@ -173,6 +173,7 @@ const NumberingCorner = sequelize.import(path.join(__dirname, '/src/model/number
 const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
 // const ThreeStyleEdge = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdge'));
 const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/numberingEdgeMiddle'));
+const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -858,6 +859,71 @@ sequelize.sync().then(() => {
             });
     });
 
+    // 3-styleクイズの登録した問題リストを取ってくる
+    app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/corner/:userName`, (req, res, next) => {
+        const userName = req.params.userName;
+
+        if (!userName) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/threeStyleQuizList/corner',
+                params: {
+                    userName,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        const query = {
+            where: {
+                userName,
+            },
+        };
+
+        return ThreeStyleQuizListCorner
+            .findAll(query)
+            .then((result) => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                    params: {
+                        userName,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch(() => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                    params: {
+                        userName,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
     // Authentification Filter
     app.use((req, res, next) => {
         // get token from body:token or query:token of Http Header:x-access-token
@@ -943,6 +1009,7 @@ sequelize.sync().then(() => {
         res.status(200);
     });
 
+    // FIXME 他人のレターペア変えられるのでは?
     app.post(process.env.EXPRESS_ROOT + '/letterPair/:userName', (req, res, next) => {
         const hiraganas = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'.split(/(.{1})/).filter(x => x);
 
@@ -1663,6 +1730,118 @@ sequelize.sync().then(() => {
                     msg: '',
                 });
                 res.status(400).send(badRequestError);
+            });
+    });
+
+    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/corner`, (req, res, next) => {
+        const userName = req.decoded.userName;
+        const threeStyleQuizList = req.body.threeStyleQuizList ? req.body.threeStyleQuizList : [];
+        // 形式は [{userName, buffer, sticker1, sticker2, stickers}]
+        // userNameはデコードしたuserNameで置き換える
+
+        if (!userName || !threeStyleQuizList) {
+            console.dir(userName);
+            console.dir(threeStyleQuizList);
+
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/threeStyleQuizList/corner',
+                params: {
+                    userName,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        sequelize
+            .transaction((t) => {
+                // まず今のlistを消す
+                return ThreeStyleQuizListCorner
+                    .destroy({
+                        where: {
+                            userName,
+                        },
+                        transaction: t,
+                    })
+                    .then((result) => {
+                        // 次に、UIから入力された情報で更新
+                        let promises = [];
+                        for (let i = 0; i < threeStyleQuizList.length; i++) {
+                            const ts = threeStyleQuizList[i];
+
+                            if (!ts.buffer || !ts.sticker1 || !ts.sticker2 || !ts.stickers) {
+                                throw new Error('Error: 空の値があります');
+                            }
+
+                            const instance = {
+                                userName,
+                                buffer: ts.buffer,
+                                sticker1: ts.sticker1,
+                                sticker2: ts.sticker2,
+                                stickers: ts.stickers,
+                            };
+
+                            promises.push(
+                                ThreeStyleQuizListCorner
+                                    .create(instance, {
+                                        transaction: t,
+                                    })
+                                    .then((result) => {
+                                        return {
+                                            code: 200,
+                                            params: instance,
+                                            msg: 'OK',
+                                        };
+                                    })
+                                    .catch(() => {
+                                        throw new Error('エラー');
+                                    }));
+                        }
+
+                        return Promise.all(promises)
+                            .then((result) => {
+                                logger.emit('api.request', {
+                                    requestType: 'POST',
+                                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                                    params: {
+                                        userName,
+                                        decoded: req.decoded,
+                                    },
+                                    status: 'success',
+                                    code: 200,
+                                    msg: '',
+                                });
+
+                                const ans = {
+                                    success: {
+                                        code: 200,
+                                        result,
+                                    },
+                                };
+
+                                res.json(ans);
+                                res.status(200);
+                            })
+                            .catch(() => {
+                                logger.emit('api.request', {
+                                    requestType: 'POST',
+                                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                                    params: {
+                                        userName,
+                                        decoded: req.decoded,
+                                    },
+                                    status: 'error',
+                                    code: 400,
+                                    msg: '',
+                                });
+                                res.status(400).send(badRequestError);
+                            });
+                    });
             });
     });
 
