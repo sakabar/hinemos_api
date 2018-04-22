@@ -212,6 +212,29 @@ sequelize.sync().then(() => {
         const inputPassword = req.body.password;
         const password = getHashedPassword(userName, inputPassword);
 
+        const userNameValidation = userName.match(/^[A-Za-z0-9_]+$/);
+        const passwordValidation = inputPassword.match(/^[A-Za-z0-9@#$%&_:;]+$/);
+
+        if (!userNameValidation || !passwordValidation || inputPassword < 8) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/users',
+                params: {
+                    userName,
+                    password: '********',
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send({
+                error: {
+                    code: 400,
+                },
+            });
+            return;
+        }
+
         User.create({
             userName,
             password,
