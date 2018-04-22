@@ -415,6 +415,8 @@ sequelize.sync().then(() => {
     // 直近28日(envファイルで指定)の中で、直近の mean of 3 を計算
     app.get(process.env.EXPRESS_ROOT + '/letterPairQuizLog/:userName', (req, res, next) => {
         const userName = req.params.userName;
+        const days = parseInt(req.query.days ? req.query.days : process.env.LETTER_PAIR_QUIZ_LOG_RECENT); // 「n日間に」解いた問題
+
         if (!userName) {
             logger.emit('api.request', {
                 requestType: 'GET',
@@ -448,7 +450,7 @@ sequelize.sync().then(() => {
                     userName,
                     // 最近の記録のみ使用
                     createdAt: {
-                        [Op.gt]: new Date(new Date() - process.env.LETTER_PAIR_QUIZ_LOG_RECENT),
+                        [Op.gt]: new Date(new Date() - days * (60 * 60 * 24 * 1000)), // ミリ秒に変換
                     },
                 },
                 order: [
@@ -1746,9 +1748,6 @@ sequelize.sync().then(() => {
         // userNameはデコードしたuserNameで置き換える
 
         if (!userName || !threeStyleQuizList) {
-            console.dir(userName);
-            console.dir(threeStyleQuizList);
-
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/threeStyleQuizList/corner',
