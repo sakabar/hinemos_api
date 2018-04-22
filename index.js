@@ -956,6 +956,7 @@ sequelize.sync().then(() => {
                     params: {
                         body: req.body,
                         query: req.query,
+                        userName: req.decoded.userName,
                     },
                     status: 'error',
                     code: 403,
@@ -1070,6 +1071,7 @@ sequelize.sync().then(() => {
                     requestType: 'POST',
                     endpoint: '/hinemos/letterPair/' + userName,
                     params: {
+                        userName,
                         word: inputWord,
                         letters,
                     },
@@ -1091,6 +1093,7 @@ sequelize.sync().then(() => {
                     requestType: 'POST',
                     endpoint: '/hinemos/letterPair/' + userName,
                     params: {
+                        userName,
                         word: inputWord,
                         letters,
                     },
@@ -1402,6 +1405,7 @@ sequelize.sync().then(() => {
                     setup,
                     move1,
                     move2,
+                    userName: req.decoded.userName,
                     decoded: req.decoded,
                 },
                 status: 'error',
@@ -1446,6 +1450,7 @@ sequelize.sync().then(() => {
                         setup,
                         move1,
                         move2,
+                        userName: req.decoded.userName,
                         decoded: req.decoded,
                     },
                     status: 'success',
@@ -1466,6 +1471,7 @@ sequelize.sync().then(() => {
                         setup,
                         move1,
                         move2,
+                        userName: req.decoded.userName,
                         decoded: req.decoded,
                     },
                     status: 'error',
