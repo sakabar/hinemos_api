@@ -212,6 +212,29 @@ sequelize.sync().then(() => {
         const inputPassword = req.body.password;
         const password = getHashedPassword(userName, inputPassword);
 
+        const userNameValidation = userName.match(/^[A-Za-z0-9_]+$/);
+        const passwordValidation = inputPassword.match(/^[A-Za-z0-9@#$%&_:;]+$/);
+
+        if (!userNameValidation || !passwordValidation || inputPassword < 8) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/users',
+                params: {
+                    userName,
+                    password: '********',
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send({
+                error: {
+                    code: 400,
+                },
+            });
+            return;
+        }
+
         User.create({
             userName,
             password,
@@ -415,6 +438,8 @@ sequelize.sync().then(() => {
     // 直近28日(envファイルで指定)の中で、直近の mean of 3 を計算
     app.get(process.env.EXPRESS_ROOT + '/letterPairQuizLog/:userName', (req, res, next) => {
         const userName = req.params.userName;
+        const days = parseInt(req.query.days ? req.query.days : process.env.LETTER_PAIR_QUIZ_LOG_RECENT); // 「n日間に」解いた問題
+
         if (!userName) {
             logger.emit('api.request', {
                 requestType: 'GET',
@@ -448,7 +473,7 @@ sequelize.sync().then(() => {
                     userName,
                     // 最近の記録のみ使用
                     createdAt: {
-                        [Op.gt]: new Date(new Date() - process.env.LETTER_PAIR_QUIZ_LOG_RECENT),
+                        [Op.gt]: new Date(new Date() - days * (60 * 60 * 24 * 1000)), // ミリ秒に変換
                     },
                 },
                 order: [
@@ -956,6 +981,7 @@ sequelize.sync().then(() => {
                     params: {
                         body: req.body,
                         query: req.query,
+                        userName: req.decoded.userName,
                     },
                     status: 'error',
                     code: 403,
@@ -1070,6 +1096,7 @@ sequelize.sync().then(() => {
                     requestType: 'POST',
                     endpoint: '/hinemos/letterPair/' + userName,
                     params: {
+                        userName,
                         word: inputWord,
                         letters,
                     },
@@ -1091,6 +1118,7 @@ sequelize.sync().then(() => {
                     requestType: 'POST',
                     endpoint: '/hinemos/letterPair/' + userName,
                     params: {
+                        userName,
                         word: inputWord,
                         letters,
                     },
@@ -1402,6 +1430,7 @@ sequelize.sync().then(() => {
                     setup,
                     move1,
                     move2,
+                    userName: req.decoded.userName,
                     decoded: req.decoded,
                 },
                 status: 'error',
@@ -1446,6 +1475,7 @@ sequelize.sync().then(() => {
                         setup,
                         move1,
                         move2,
+                        userName: req.decoded.userName,
                         decoded: req.decoded,
                     },
                     status: 'success',
@@ -1466,6 +1496,7 @@ sequelize.sync().then(() => {
                         setup,
                         move1,
                         move2,
+                        userName: req.decoded.userName,
                         decoded: req.decoded,
                     },
                     status: 'error',
@@ -1740,9 +1771,6 @@ sequelize.sync().then(() => {
         // userNameはデコードしたuserNameで置き換える
 
         if (!userName || !threeStyleQuizList) {
-            console.dir(userName);
-            console.dir(threeStyleQuizList);
-
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/threeStyleQuizList/corner',
