@@ -981,7 +981,6 @@ sequelize.sync().then(() => {
                     params: {
                         body: req.body,
                         query: req.query,
-                        userName: req.decoded.userName,
                     },
                     status: 'error',
                     code: 403,
