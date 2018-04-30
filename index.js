@@ -1872,5 +1872,136 @@ sequelize.sync().then(() => {
             });
     });
 
+    app.post(process.env.EXPRESS_ROOT + '/threeStyleCornerTable', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const threeStyleTable = req.body.threeStyleTable;
+
+        if (!userName || !threeStyleTable) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/threeStyleCornerTable',
+                params: {
+                    userName,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        sequelize
+            .transaction((t) => {
+                // まず今のthreeStyleを消す
+                return ThreeStyleCorner
+                    .destroy({
+                        where: {
+                            userName,
+                        },
+                        transaction: t,
+                    })
+                    .then(() => {
+                        // 次に、UIの表から入力された情報で更新
+                        let promises = [];
+                        for (let i = 0; i < threeStyleTable.length; i++) {
+                            const ts = threeStyleTable[i];
+
+                            // FIXME stickersを得る手順が複数の場所で重複している。関数化したほうがいいかも
+                            const stickers = `${ts.buffer} ${ts.sticker1} ${ts.sticker2}`;
+                            const instance = {
+                                userName,
+                                numberOfMoves: utils.getNumberOfMoves(ts.setup, ts.move1, ts.move2),
+                                buffer: ts.buffer,
+                                sticker1: ts.sticker1,
+                                sticker2: ts.sticker2,
+                                stickers,
+                                setup: ts.setup,
+                                move1: ts.move1,
+                                move2: ts.move2,
+                            };
+
+                            promises.push(
+                                ThreeStyleCorner
+                                    .create(instance, {
+                                        transaction: t,
+                                    })
+                                    .then((result) => {
+                                        return {
+                                            code: 200,
+                                            params: instance,
+                                            msg: 'OK',
+                                        };
+                                    })
+                                    .catch((err) => {
+                                        const msg = `『「${stickers}」に手順を登録しようとしたところ、エラーが発生しました。${err}』`;
+
+                                        throw new Error(msg);
+                                    }));
+                        }
+
+                        return Promise.all(promises)
+                            .then((result) => {
+                                return 200;
+                            })
+                            .catch((err) => {
+                                throw new Error(err);
+                            });
+                    })
+                    .catch((err) => {
+                        throw new Error(err);
+                    });
+            })
+            .then((result) => {
+                if (result === 200) {
+                    logger.emit('api.request', {
+                        requestType: 'POST',
+                        endpoint: '/hinemos/threeStyleCornerTable',
+                        params: {
+                            userName,
+                            decoded: req.decoded,
+                        },
+                        status: 'success',
+                        code: 200,
+                        msg: '',
+                    });
+
+                    const ans = {
+                        success: {
+                            code: 200,
+                            result,
+                        },
+                    };
+                    res.json(ans);
+                    res.status(200);
+                } else {
+                    throw new Error('error');
+                }
+            })
+            .catch((err) => {
+                logger.emit('api.request', {
+                    requestType: 'POST',
+                    endpoint: '/hinemos/threeStyleCornerTable',
+                    params: {
+                        userName,
+                        decoded: req.decoded,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: err,
+                });
+
+                const badRequestErrorWithParams = {
+                    error: {
+                        code: 400,
+                        message: 'Bad Request: ' + err,
+                    },
+                };
+
+                res.status(400).send(badRequestErrorWithParams);
+            });
+    });
+
     app.listen(process.env.EXPRESS_PORT);
 });
