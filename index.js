@@ -366,26 +366,11 @@ sequelize.sync().then(() => {
         const word = req.query.word;
         const letters = req.query.letters;
 
-        if (!userName && !word && !letters) {
-            logger.emit('api.request', {
-                requestType: 'GET',
-                endpoint: '/hinemos/letterPair',
-                params: {
-                    userName,
-                    word,
-                    letters,
-                },
-                status: 'error',
-                code: 400,
-                msg: '',
-            });
-            res.status(400).send(badRequestError);
-            return;
-        }
-
-        let query = {
+        // 何もパラメータが入力されていない場合は、全てのレターペアを返す
+        const query = {
             where: {},
         };
+
         if (word) {
             query.where.word = word;
         }
