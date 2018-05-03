@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
+const math = require('mathjs');
 const path = require('path');
 const utils = require('./src/lib/utils');
 const Sequelize = require('sequelize');
@@ -24,17 +25,20 @@ logger.emit('api.sys', {
 // FIXME テスト書く
 const getRecentLetterPairQuizLogs = (quizLogs) => {
     const avgNum = 3; // mo3
-    let ans = {};
+    const ans = {};
 
     // 新しい順に avgNum 個まで取ってくる
     for (let i = 0; i < quizLogs.length; i++) {
         const quizLog = quizLogs[i];
         const letters = quizLog.letters;
 
+        // 間違えた問題は60秒として扱う
+        const sec = quizLog.isRecalled === 1 ? quizLog.sec : 60.0;
+
         const obj = {
             userName: quizLog.userName,
             letters,
-            sec: quizLog.sec,
+            sec,
         };
 
         if (!ans[letters]) {
@@ -48,20 +52,18 @@ const getRecentLetterPairQuizLogs = (quizLogs) => {
     return ans;
 };
 
-// カラムは 'user_name', 'letters', avg('sec') の3つ
+// カラムは 'user_name', 'letters', avg('sec'), 'is_recalled' の4つ
 // 1つのuserNameしか入っていないと仮定
 // キーはユニークであると仮定
 const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
     const recent = getRecentLetterPairQuizLogs(quizLogs);
-    let ans = [];
+    const ans = [];
 
     for (let letters of Object.keys(recent)) {
         const arr = recent[letters];
         const userName = arr[0].userName;
 
-        const sumSec = arr.map(x => x.sec).reduce((acc, x) => acc + x);
-        const cnt = arr.length;
-        const avgSec = 1.0 * sumSec / cnt;
+        const avgSec = math.mean(arr.map(x => x.sec));
 
         // スネークケースに戻す
         const obj = {
@@ -82,12 +84,15 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
 // FIXME テスト書く
 const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
     const avgNum = 3; // mo3
-    let ans = {};
+    const ans = {};
 
     // 新しい順に avgNum 個まで取ってくる
     for (let i = 0; i < quizLogs.length; i++) {
         const quizLog = quizLogs[i];
         const stickers = quizLog.stickers;
+
+        // 間違えていたら解答時間は20秒として扱う
+        const sec = quizLog.isRecalled === 1 ? quizLog.sec : 20.0;
 
         const obj = {
             userName: quizLog.userName,
@@ -95,7 +100,7 @@ const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
             sticker1: quizLog.sticker1,
             sticker2: quizLog.sticker2,
             stickers,
-            sec: quizLog.sec,
+            sec,
         };
 
         if (!ans[stickers]) {
@@ -110,12 +115,12 @@ const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
 };
 
 // FIXME ロジックが重複?
-// カラムは 'user_name', 'letters', avg('sec') の3つ
+// カラムは 'user_name', 'letters', avg('sec'), is_recalled の4つ
 // 1つのuserNameしか入っていないと仮定
 // キーはユニークであると仮定
 const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
     const recent = getRecentThreeStyleCornerQuizLogs(quizLogs);
-    let ans = [];
+    const ans = [];
 
     for (let stickers of Object.keys(recent)) {
         const arr = recent[stickers];
@@ -124,9 +129,7 @@ const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
         const sticker1 = arr[0].sticker1;
         const sticker2 = arr[0].sticker2;
 
-        const sumSec = arr.map(x => x.sec).reduce((acc, x) => acc + x);
-        const cnt = arr.length;
-        const avgSec = 1.0 * sumSec / cnt;
+        const avgSec = math.mean(arr.map(x => x.sec));
 
         // スネークケースに戻す
         const obj = {
@@ -452,6 +455,7 @@ sequelize.sync().then(() => {
                 attributes: [
                     [ 'user_name', 'userName', ],
                     'letters',
+                    [ 'is_recalled', 'isRecalled', ],
                     'sec',
                 ],
                 where: {
@@ -522,7 +526,7 @@ sequelize.sync().then(() => {
         // const move1 = req.query.move1;
         // const move2 = req.query.move2;
 
-        let query = {
+        const query = {
             where: {},
         };
         if (userName) {
@@ -729,7 +733,7 @@ sequelize.sync().then(() => {
             return;
         }
 
-        let query = {
+        const query = {
             where: {
                 userName,
             },
@@ -813,6 +817,7 @@ sequelize.sync().then(() => {
                 'sticker1',
                 'sticker2',
                 'stickers',
+                [ 'is_recalled', 'isRecalled', ],
                 'sec',
             ],
             where: {
@@ -1019,7 +1024,6 @@ sequelize.sync().then(() => {
         res.status(200);
     });
 
-    // FIXME 他人のレターペア変えられるのでは?
     app.post(process.env.EXPRESS_ROOT + '/letterPair/:userName', (req, res, next) => {
         const hiraganas = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'.split(/(.{1})/).filter(x => x);
 
@@ -1048,7 +1052,7 @@ sequelize.sync().then(() => {
         }
 
         const words = inputWord.replace(/\s/g, '').split(/[,，、/／]/).filter(x => x.length > 0);
-        let promises = [];
+        const promises = [];
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
 
@@ -1141,7 +1145,7 @@ sequelize.sync().then(() => {
             return;
         }
 
-        let query = {
+        const query = {
             where: {
                 userName,
             },
@@ -1230,7 +1234,7 @@ sequelize.sync().then(() => {
                     })
                     .then((result) => {
                         // 次に、UIの表から入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < letterPairTable.length; i++) {
                             const words = letterPairTable[i].words;
                             for (let k = 0; k < words.length; k++) {
@@ -1256,7 +1260,7 @@ sequelize.sync().then(() => {
                                             };
                                         })
                                         .catch(() => {
-                                            const msg = '『ひらがな「' + String(instance.letters) + '」に単語「' + String(instance.word) + '」を割り当てようとしたところ、エラーが発生しました。』';
+                                            const msg = `『ひらがな「${String(instance.letters)}」に単語「${String(instance.word)}」を割り当てようとしたところ、エラーが発生しました。』`;
                                             throw new Error(msg);
                                         }));
                             }
@@ -1540,7 +1544,7 @@ sequelize.sync().then(() => {
                     })
                     .then((result) => {
                         // 次に、UIから入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < numberings.length; i++) {
                             const sticker = numberings[i].sticker;
                             const letter = numberings[i].letter;
@@ -1640,7 +1644,7 @@ sequelize.sync().then(() => {
             buffer,
             sticker1,
             sticker2,
-            stickers: buffer + ' ' + sticker1 + ' ' + sticker2,
+            stickers: `${buffer} ${sticker1} ${sticker2}`,
             usedHint,
             isRecalled,
             sec,
@@ -1699,7 +1703,7 @@ sequelize.sync().then(() => {
         }
 
         // リクエストしたユーザと、threeStyleを登録したユーザは一致している必要がある
-        let query = {
+        const query = {
             where: {
                 userName,
                 id,
@@ -1782,7 +1786,7 @@ sequelize.sync().then(() => {
                     })
                     .then((result) => {
                         // 次に、UIから入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < threeStyleQuizList.length; i++) {
                             const ts = threeStyleQuizList[i];
 
@@ -1889,7 +1893,7 @@ sequelize.sync().then(() => {
                     })
                     .then(() => {
                         // 次に、UIの表から入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < threeStyleTable.length; i++) {
                             const ts = threeStyleTable[i];
 
