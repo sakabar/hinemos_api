@@ -25,7 +25,7 @@ logger.emit('api.sys', {
 // FIXME テスト書く
 const getRecentLetterPairQuizLogs = (quizLogs) => {
     const avgNum = 3; // mo3
-    let ans = {};
+    const ans = {};
 
     // 新しい順に avgNum 個まで取ってくる
     for (let i = 0; i < quizLogs.length; i++) {
@@ -54,7 +54,7 @@ const getRecentLetterPairQuizLogs = (quizLogs) => {
 // キーはユニークであると仮定
 const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
     const recent = getRecentLetterPairQuizLogs(quizLogs);
-    let ans = [];
+    const ans = [];
 
     for (let letters of Object.keys(recent)) {
         const arr = recent[letters];
@@ -81,7 +81,7 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
 // FIXME テスト書く
 const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
     const avgNum = 3; // mo3
-    let ans = {};
+    const ans = {};
 
     // 新しい順に avgNum 個まで取ってくる
     for (let i = 0; i < quizLogs.length; i++) {
@@ -114,7 +114,7 @@ const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
 // キーはユニークであると仮定
 const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
     const recent = getRecentThreeStyleCornerQuizLogs(quizLogs);
-    let ans = [];
+    const ans = [];
 
     for (let stickers of Object.keys(recent)) {
         const arr = recent[stickers];
@@ -519,7 +519,7 @@ sequelize.sync().then(() => {
         // const move1 = req.query.move1;
         // const move2 = req.query.move2;
 
-        let query = {
+        const query = {
             where: {},
         };
         if (userName) {
@@ -726,7 +726,7 @@ sequelize.sync().then(() => {
             return;
         }
 
-        let query = {
+        const query = {
             where: {
                 userName,
             },
@@ -1045,7 +1045,7 @@ sequelize.sync().then(() => {
         }
 
         const words = inputWord.replace(/\s/g, '').split(/[,，、/／]/).filter(x => x.length > 0);
-        let promises = [];
+        const promises = [];
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
 
@@ -1138,7 +1138,7 @@ sequelize.sync().then(() => {
             return;
         }
 
-        let query = {
+        const query = {
             where: {
                 userName,
             },
@@ -1227,7 +1227,7 @@ sequelize.sync().then(() => {
                     })
                     .then((result) => {
                         // 次に、UIの表から入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < letterPairTable.length; i++) {
                             const words = letterPairTable[i].words;
                             for (let k = 0; k < words.length; k++) {
@@ -1537,7 +1537,7 @@ sequelize.sync().then(() => {
                     })
                     .then((result) => {
                         // 次に、UIから入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < numberings.length; i++) {
                             const sticker = numberings[i].sticker;
                             const letter = numberings[i].letter;
@@ -1696,7 +1696,7 @@ sequelize.sync().then(() => {
         }
 
         // リクエストしたユーザと、threeStyleを登録したユーザは一致している必要がある
-        let query = {
+        const query = {
             where: {
                 userName,
                 id,
@@ -1779,7 +1779,7 @@ sequelize.sync().then(() => {
                     })
                     .then((result) => {
                         // 次に、UIから入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < threeStyleQuizList.length; i++) {
                             const ts = threeStyleQuizList[i];
 
@@ -1886,7 +1886,7 @@ sequelize.sync().then(() => {
                     })
                     .then(() => {
                         // 次に、UIの表から入力された情報で更新
-                        let promises = [];
+                        const promises = [];
                         for (let i = 0; i < threeStyleTable.length; i++) {
                             const ts = threeStyleTable[i];
 
