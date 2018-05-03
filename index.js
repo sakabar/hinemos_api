@@ -32,10 +32,13 @@ const getRecentLetterPairQuizLogs = (quizLogs) => {
         const quizLog = quizLogs[i];
         const letters = quizLog.letters;
 
+        // 間違えた問題は60秒として扱う
+        const sec = quizLog.isRecalled === 1 ? quizLog.sec : 60.0;
+
         const obj = {
             userName: quizLog.userName,
             letters,
-            sec: quizLog.sec,
+            sec,
         };
 
         if (!ans[letters]) {
@@ -49,7 +52,7 @@ const getRecentLetterPairQuizLogs = (quizLogs) => {
     return ans;
 };
 
-// カラムは 'user_name', 'letters', avg('sec') の3つ
+// カラムは 'user_name', 'letters', avg('sec'), 'is_recalled' の4つ
 // 1つのuserNameしか入っていないと仮定
 // キーはユニークであると仮定
 const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
@@ -88,13 +91,16 @@ const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
         const quizLog = quizLogs[i];
         const stickers = quizLog.stickers;
 
+        // 間違えていたら解答時間は20秒として扱う
+        const sec = quizLog.isRecalled === 1 ? quizLog.sec : 20.0;
+
         const obj = {
             userName: quizLog.userName,
             buffer: quizLog.buffer,
             sticker1: quizLog.sticker1,
             sticker2: quizLog.sticker2,
             stickers,
-            sec: quizLog.sec,
+            sec,
         };
 
         if (!ans[stickers]) {
@@ -109,7 +115,7 @@ const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
 };
 
 // FIXME ロジックが重複?
-// カラムは 'user_name', 'letters', avg('sec') の3つ
+// カラムは 'user_name', 'letters', avg('sec'), is_recalled の4つ
 // 1つのuserNameしか入っていないと仮定
 // キーはユニークであると仮定
 const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
@@ -449,6 +455,7 @@ sequelize.sync().then(() => {
                 attributes: [
                     [ 'user_name', 'userName', ],
                     'letters',
+                    [ 'is_recalled', 'isRecalled', ],
                     'sec',
                 ],
                 where: {
@@ -810,6 +817,7 @@ sequelize.sync().then(() => {
                 'sticker1',
                 'sticker2',
                 'stickers',
+                [ 'is_recalled', 'isRecalled', ],
                 'sec',
             ],
             where: {
@@ -1016,7 +1024,6 @@ sequelize.sync().then(() => {
         res.status(200);
     });
 
-    // FIXME 他人のレターペア変えられるのでは?
     app.post(process.env.EXPRESS_ROOT + '/letterPair/:userName', (req, res, next) => {
         const hiraganas = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'.split(/(.{1})/).filter(x => x);
 
