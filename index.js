@@ -1253,7 +1253,7 @@ sequelize.sync().then(() => {
                                             };
                                         })
                                         .catch(() => {
-                                            const msg = '『ひらがな「' + String(instance.letters) + '」に単語「' + String(instance.word) + '」を割り当てようとしたところ、エラーが発生しました。』';
+                                            const msg = `『ひらがな「${String(instance.letters)}」に単語「${String(instance.word)}」を割り当てようとしたところ、エラーが発生しました。』`;
                                             throw new Error(msg);
                                         }));
                             }
@@ -1637,7 +1637,7 @@ sequelize.sync().then(() => {
             buffer,
             sticker1,
             sticker2,
-            stickers: buffer + ' ' + sticker1 + ' ' + sticker2,
+            stickers: `${buffer} ${sticker1} ${sticker2}`,
             usedHint,
             isRecalled,
             sec,
