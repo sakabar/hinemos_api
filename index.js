@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
+const math = require('mathjs');
 const path = require('path');
 const utils = require('./src/lib/utils');
 const Sequelize = require('sequelize');
@@ -59,9 +60,7 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
         const arr = recent[letters];
         const userName = arr[0].userName;
 
-        const sumSec = arr.map(x => x.sec).reduce((acc, x) => acc + x);
-        const cnt = arr.length;
-        const avgSec = 1.0 * sumSec / cnt;
+        const avgSec = math.mean(arr.map(x => x.sec));
 
         // スネークケースに戻す
         const obj = {
@@ -124,9 +123,7 @@ const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
         const sticker1 = arr[0].sticker1;
         const sticker2 = arr[0].sticker2;
 
-        const sumSec = arr.map(x => x.sec).reduce((acc, x) => acc + x);
-        const cnt = arr.length;
-        const avgSec = 1.0 * sumSec / cnt;
+        const avgSec = math.mean(arr.map(x => x.sec));
 
         // スネークケースに戻す
         const obj = {
