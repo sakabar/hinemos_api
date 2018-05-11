@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
         'DR', 'DF', 'DL', 'DB',
     ];
 
-    const db = sequelize.define('three_style_edge', {
+    const db = sequelize.define('three_style_edge_middle', {
         id: {
             field: 'id',
             type: DataTypes.INTEGER,
@@ -20,6 +20,11 @@ module.exports = (sequelize, DataTypes) => {
         userName: {
             field: 'user_name',
             type: DataTypes.STRING,
+            allowNull: false,
+        },
+        numberOfMoves: {
+            field: 'number_of_moves',
+            type: DataTypes.INTEGER,
             allowNull: false,
         },
         buffer: {
@@ -35,6 +40,14 @@ module.exports = (sequelize, DataTypes) => {
         sticker2: {
             field: 'sticker2',
             type: DataTypes.ENUM(edges),
+            allowNull: false,
+        },
+        // buffer[SP]sticker1[SP]sticker2
+        // (buffer, sticker1, sticker2)に対して一意に決まるが、
+        // 簡単のためカラムを用意
+        stickers: {
+            field: 'stickers',
+            type: DataTypes.STRING,
             allowNull: false,
         },
         setup: {
@@ -54,7 +67,7 @@ module.exports = (sequelize, DataTypes) => {
         },
     }, {
         freezeTableName: true,
-        tableName: 'three_style_edge',
+        tableName: 'three_style_edge_middle',
         charset: 'utf8',
         collate: 'utf8_unicode_ci',
     });

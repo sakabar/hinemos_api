@@ -171,11 +171,11 @@ const sequelize = new Sequelize(
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
 const LetterPairQuizLog = sequelize.import(path.join(__dirname, '/src/model/letterPairQuizLog'));
-const ThreeStyleCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleCorner'));
 const NumberingCorner = sequelize.import(path.join(__dirname, '/src/model/numberingCorner'));
-const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
-// const ThreeStyleEdge = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdge'));
 const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/numberingEdgeMiddle'));
+const ThreeStyleCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleCorner'));
+const ThreeStyleEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdgeMiddle'));
+const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
 const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
 
 const getHashedPassword = (userName, password) => {
@@ -1395,23 +1395,26 @@ sequelize.sync().then(() => {
         });
     });
 
-    app.post(process.env.EXPRESS_ROOT + '/threeStyle/corner', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/threeStyle/:part', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const part = req.params.part;
+
         const buffer = req.body.buffer.replace(/\s*$/, '').replace(/^\s*/, '');
         const sticker1 = req.body.sticker1.replace(/\s*$/, '').replace(/^\s*/, '');
         const sticker2 = req.body.sticker2.replace(/\s*$/, '').replace(/^\s*/, '');
         const setup = req.body.setup.replace(/\s*$/, '').replace(/^\s*/, '');
         const move1 = req.body.move1.replace(/\s*$/, '').replace(/^\s*/, '');
         const move2 = req.body.move2.replace(/\s*$/, '').replace(/^\s*/, '');
-        const userName = req.decoded.userName;
 
         const okCond1 = (move1 !== '' && move2 !== '');
         const okCond2 = (move1 === '' && move2 === '' && setup !== '');
 
-        if (!userName || !buffer || !sticker1 || !sticker2 || !(okCond1 || okCond2)) {
+        if (!userName || !buffer || !sticker1 || !sticker2 || !(okCond1 || okCond2) || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyle/corner',
+                endpoint: '/hinemos/threeStyle/',
                 params: {
+                    part,
                     buffer,
                     sticker1,
                     sticker2,
@@ -1431,9 +1434,16 @@ sequelize.sync().then(() => {
         }
 
         const numberOfMoves = utils.getNumberOfMoves(setup, move1, move2);
-        const stickers = buffer + ' ' + sticker1 + ' ' + sticker2;
+        const stickers = `${buffer} ${sticker1} ${sticker2}`;
 
-        ThreeStyleCorner
+        let threeStyleModel;
+        if (part === 'corner') {
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
+        threeStyleModel
             .create({
                 userName,
                 numberOfMoves,
@@ -1455,8 +1465,9 @@ sequelize.sync().then(() => {
 
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
@@ -1476,8 +1487,9 @@ sequelize.sync().then(() => {
             .catch((err) => {
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
