@@ -178,6 +178,7 @@ const ThreeStyleEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/t
 const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
 const ThreeStyleQuizLogEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogEdgeMiddle'));
 const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
+const ThreeStyleQuizListEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListEdgeMiddle'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -917,15 +918,17 @@ sequelize.sync().then(() => {
     });
 
     // 3-styleクイズの登録した問題リストを取ってくる
-    app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/corner/:userName`, (req, res, next) => {
+    app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/:part/:userName`, (req, res, next) => {
         const userName = req.params.userName;
+        const part = req.params.part;
 
-        if (!userName) {
+        if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/threeStyleQuizList/corner',
+                endpoint: '/hinemos/threeStyleQuizList/',
                 params: {
                     userName,
+                    part,
                 },
                 status: 'error',
                 code: 400,
@@ -942,14 +945,22 @@ sequelize.sync().then(() => {
             },
         };
 
-        return ThreeStyleQuizListCorner
+        let threeStyleQuizListModel;
+        if (part === 'corner') {
+            threeStyleQuizListModel = ThreeStyleQuizListCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizListModel = ThreeStyleQuizListEdgeMiddle;
+        }
+
+        return threeStyleQuizListModel
             .findAll(query)
             .then((result) => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                    endpoint: '/hinemos/threeStyleQuizList/',
                     params: {
                         userName,
+                        part,
                     },
                     status: 'success',
                     code: 200,
@@ -968,9 +979,10 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                    endpoint: '/hinemos/threeStyleQuizList/',
                     params: {
                         userName,
+                        part,
                     },
                     status: 'error',
                     code: 400,
