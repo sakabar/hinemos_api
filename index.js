@@ -517,14 +517,35 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.get(process.env.EXPRESS_ROOT + '/threeStyle/corner', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/threeStyle/:part', (req, res, next) => {
         const userName = req.query.userName;
         const buffer = req.query.buffer;
         const sticker1 = req.query.sticker1;
         const sticker2 = req.query.sticker2;
+        const part = req.params.part;
         // const setup = req.query.setup;
         // const move1 = req.query.move1;
         // const move2 = req.query.move2;
+
+        if (!(part === 'corner' || part === 'edgeMiddle')) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/threeStyle/',
+                params: {
+                    userName,
+                    part,
+                    buffer,
+                    sticker1,
+                    sticker2,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
 
         const query = {
             where: {},
@@ -542,7 +563,14 @@ sequelize.sync().then(() => {
             query.where.sticker2 = sticker2;
         }
 
-        ThreeStyleCorner
+        let threeStyleModel;
+        if (part === 'corner') {
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
+        threeStyleModel
             .findAll(query)
             .then((result) => {
                 const ans = {
@@ -554,9 +582,10 @@ sequelize.sync().then(() => {
 
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
                         userName,
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
@@ -572,9 +601,10 @@ sequelize.sync().then(() => {
             .catch((err) => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
                         userName,
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
