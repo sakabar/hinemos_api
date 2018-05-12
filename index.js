@@ -1018,7 +1018,7 @@ sequelize.sync().then(() => {
         if (!token) {
             logger.emit('api.request', {
                 requestType: 'USE',
-                endpoint: '/hinemos/auth-filter',
+                endpoint: '/hinemos/authFilter',
                 params: {
                     body: req.body,
                     query: req.query,
@@ -1037,7 +1037,7 @@ sequelize.sync().then(() => {
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
             if (err) {
                 logger.emit('api.request', {
-                    endpoint: 'USE /hinemos/auth-filter',
+                    endpoint: 'USE /hinemos/authFilter',
                     params: {
                         body: req.body,
                         query: req.query,
@@ -1058,7 +1058,7 @@ sequelize.sync().then(() => {
             req.decoded = decoded;
             logger.emit('api.request', {
                 requestType: 'USE',
-                endpoint: '/hinemos/auth-filter',
+                endpoint: '/hinemos/authFilter',
                 params: {
                     userName: decoded.userName,
                     body: req.body,
