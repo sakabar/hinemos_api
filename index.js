@@ -82,7 +82,7 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
 // stickers単位でそれぞれ直近の3つまで取ってくる
 // 新しい順にソート済という想定
 // FIXME テスト書く
-const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
+const getRecentThreeStyleQuizLogs = (quizLogs) => {
     const avgNum = 3; // mo3
     const ans = {};
 
@@ -118,8 +118,8 @@ const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
 // カラムは 'user_name', 'letters', avg('sec'), is_recalled の4つ
 // 1つのuserNameしか入っていないと仮定
 // キーはユニークであると仮定
-const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
-    const recent = getRecentThreeStyleCornerQuizLogs(quizLogs);
+const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
+    const recent = getRecentThreeStyleQuizLogs(quizLogs);
     const ans = [];
 
     for (let stickers of Object.keys(recent)) {
@@ -169,14 +169,17 @@ const sequelize = new Sequelize(
 );
 
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
+const FaceColor = sequelize.import(path.join(__dirname, '/src/model/faceColor'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
 const LetterPairQuizLog = sequelize.import(path.join(__dirname, '/src/model/letterPairQuizLog'));
-const ThreeStyleCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleCorner'));
 const NumberingCorner = sequelize.import(path.join(__dirname, '/src/model/numberingCorner'));
-const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
-// const ThreeStyleEdge = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdge'));
 const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/numberingEdgeMiddle'));
+const ThreeStyleCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleCorner'));
+const ThreeStyleEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdgeMiddle'));
+const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
+const ThreeStyleQuizLogEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogEdgeMiddle'));
 const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
+const ThreeStyleQuizListEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListEdgeMiddle'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -517,14 +520,35 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.get(process.env.EXPRESS_ROOT + '/threeStyle/corner', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/threeStyle/:part', (req, res, next) => {
         const userName = req.query.userName;
         const buffer = req.query.buffer;
         const sticker1 = req.query.sticker1;
         const sticker2 = req.query.sticker2;
+        const part = req.params.part;
         // const setup = req.query.setup;
         // const move1 = req.query.move1;
         // const move2 = req.query.move2;
+
+        if (!(part === 'corner' || part === 'edgeMiddle')) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/threeStyle/',
+                params: {
+                    userName,
+                    part,
+                    buffer,
+                    sticker1,
+                    sticker2,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
 
         const query = {
             where: {},
@@ -542,7 +566,14 @@ sequelize.sync().then(() => {
             query.where.sticker2 = sticker2;
         }
 
-        ThreeStyleCorner
+        let threeStyleModel;
+        if (part === 'corner') {
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
+        threeStyleModel
             .findAll(query)
             .then((result) => {
                 const ans = {
@@ -554,9 +585,10 @@ sequelize.sync().then(() => {
 
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
                         userName,
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
@@ -572,9 +604,10 @@ sequelize.sync().then(() => {
             .catch((err) => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
                         userName,
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
@@ -589,16 +622,18 @@ sequelize.sync().then(() => {
     });
 
     // lettersから3-styleを引く
-    app.get(process.env.EXPRESS_ROOT + '/threeStyleFromLetters/corner', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/threeStyleFromLetters/:part', (req, res, next) => {
         const userName = req.query.userName;
         const letters = req.query.letters;
+        const part = req.params.part;
 
-        if (!userName || !letters) {
+        if (!userName || !letters || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/threeStyleFromLetters/corner',
+                endpoint: '/hinemos/threeStyleFromLetters/',
                 params: {
                     userName,
+                    part,
                     letters,
                 },
                 status: 'error',
@@ -617,16 +652,27 @@ sequelize.sync().then(() => {
             },
         };
 
-        return NumberingCorner
+        let numberingModel;
+        let threeStyleModel;
+        if (part === 'corner') {
+            numberingModel = NumberingCorner;
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            numberingModel = NumberingEdgeMiddle;
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
+        return numberingModel
             .findAll(numberingQuery)
             .then((results) => {
                 // buffer, sticker1, sticker2 で 3
                 if (results.length !== 3) {
                     logger.emit('api.request', {
                         requestType: 'GET',
-                        endpoint: '/hinemos/threeStyleFromLetters/corner',
+                        endpoint: '/hinemos/threeStyleFromLetters/',
                         params: {
                             userName,
+                            part,
                             letters,
                         },
                         status: 'error',
@@ -651,14 +697,15 @@ sequelize.sync().then(() => {
                     },
                 };
 
-                return ThreeStyleCorner
+                return threeStyleModel
                     .findAll(threeStyleQuery)
                     .then((threeStyles) => {
                         logger.emit('api.request', {
                             requestType: 'GET',
-                            endpoint: '/hinemos/threeStyleFromLetters/corner',
+                            endpoint: '/hinemos/threeStyleFromLetters/',
                             params: {
                                 userName,
+                                part,
                                 letters,
                             },
                             status: 'success',
@@ -678,9 +725,10 @@ sequelize.sync().then(() => {
                     .catch(() => {
                         logger.emit('api.request', {
                             requestType: 'GET',
-                            endpoint: '/hinemos/threeStyleFromLetters/corner',
+                            endpoint: '/hinemos/threeStyleFromLetters/',
                             params: {
                                 userName,
+                                part,
                                 letters,
                             },
                             status: 'error',
@@ -694,9 +742,10 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleFromLetters/corner',
+                    endpoint: '/hinemos/threeStyleFromLetters/',
                     params: {
                         userName,
+                        part,
                         letters,
                     },
                     status: 'error',
@@ -791,15 +840,17 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/corner/:userName', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/:part/:userName', (req, res, next) => {
         const userName = req.params.userName;
+        const part = req.params.part;
 
-        if (!userName) {
+        if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                endpoint: '/hinemos/threeStyleQuizLog/',
                 params: {
                     userName,
+                    part,
                 },
                 status: 'error',
                 code: 400,
@@ -835,14 +886,22 @@ sequelize.sync().then(() => {
             ],
         };
 
-        return ThreeStyleQuizLogCorner
+        let threeStyleQuizLogModel;
+        if (part === 'corner') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogEdgeMiddle;
+        }
+
+        return threeStyleQuizLogModel
             .findAll(query)
             .then((result) => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizLog/corner',
+                    endpoint: '/hinemos/threeStyleQuizLog/',
                     params: {
                         userName,
+                        part,
                     },
                     status: 'success',
                     code: 200,
@@ -852,7 +911,7 @@ sequelize.sync().then(() => {
                 const ans = {
                     success: {
                         code: 200,
-                        result: calcRecentMo3OfThreeStyleCornerQuizLog(result),
+                        result: calcRecentMo3OfThreeStyleQuizLog(result),
                     },
                 };
                 res.json(ans);
@@ -861,9 +920,10 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizLog/corner',
+                    endpoint: '/hinemos/threeStyleQuizLog/',
                     params: {
                         userName,
+                        part,
                     },
                     status: 'error',
                     code: 400,
@@ -875,13 +935,88 @@ sequelize.sync().then(() => {
     });
 
     // 3-styleクイズの登録した問題リストを取ってくる
-    app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/corner/:userName`, (req, res, next) => {
+    app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/:part/:userName`, (req, res, next) => {
+        const userName = req.params.userName;
+        const part = req.params.part;
+
+        if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/threeStyleQuizList/',
+                params: {
+                    userName,
+                    part,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        const query = {
+            where: {
+                userName,
+            },
+        };
+
+        let threeStyleQuizListModel;
+        if (part === 'corner') {
+            threeStyleQuizListModel = ThreeStyleQuizListCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizListModel = ThreeStyleQuizListEdgeMiddle;
+        }
+
+        return threeStyleQuizListModel
+            .findAll(query)
+            .then((result) => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyleQuizList/',
+                    params: {
+                        userName,
+                        part,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch(() => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/threeStyleQuizList/',
+                    params: {
+                        userName,
+                        part,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
+    app.get(`${process.env.EXPRESS_ROOT}/faceColor/:userName`, (req, res, next) => {
         const userName = req.params.userName;
 
         if (!userName) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/threeStyleQuizList/corner',
+                endpoint: '/hinemos/faceColor/',
                 params: {
                     userName,
                 },
@@ -900,12 +1035,12 @@ sequelize.sync().then(() => {
             },
         };
 
-        return ThreeStyleQuizListCorner
+        return FaceColor
             .findAll(query)
             .then((result) => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                    endpoint: '/hinemos/faceColor/',
                     params: {
                         userName,
                     },
@@ -926,7 +1061,7 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                    endpoint: '/hinemos/faceColor/',
                     params: {
                         userName,
                     },
@@ -948,7 +1083,7 @@ sequelize.sync().then(() => {
         if (!token) {
             logger.emit('api.request', {
                 requestType: 'USE',
-                endpoint: '/hinemos/auth-filter',
+                endpoint: '/hinemos/authFilter',
                 params: {
                     body: req.body,
                     query: req.query,
@@ -967,7 +1102,7 @@ sequelize.sync().then(() => {
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
             if (err) {
                 logger.emit('api.request', {
-                    endpoint: 'USE /hinemos/auth-filter',
+                    endpoint: 'USE /hinemos/authFilter',
                     params: {
                         body: req.body,
                         query: req.query,
@@ -988,7 +1123,7 @@ sequelize.sync().then(() => {
             req.decoded = decoded;
             logger.emit('api.request', {
                 requestType: 'USE',
-                endpoint: '/hinemos/auth-filter',
+                endpoint: '/hinemos/authFilter',
                 params: {
                     userName: decoded.userName,
                     body: req.body,
@@ -1395,23 +1530,26 @@ sequelize.sync().then(() => {
         });
     });
 
-    app.post(process.env.EXPRESS_ROOT + '/threeStyle/corner', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/threeStyle/:part', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const part = req.params.part;
+
         const buffer = req.body.buffer.replace(/\s*$/, '').replace(/^\s*/, '');
         const sticker1 = req.body.sticker1.replace(/\s*$/, '').replace(/^\s*/, '');
         const sticker2 = req.body.sticker2.replace(/\s*$/, '').replace(/^\s*/, '');
         const setup = req.body.setup.replace(/\s*$/, '').replace(/^\s*/, '');
         const move1 = req.body.move1.replace(/\s*$/, '').replace(/^\s*/, '');
         const move2 = req.body.move2.replace(/\s*$/, '').replace(/^\s*/, '');
-        const userName = req.decoded.userName;
 
         const okCond1 = (move1 !== '' && move2 !== '');
         const okCond2 = (move1 === '' && move2 === '' && setup !== '');
 
-        if (!userName || !buffer || !sticker1 || !sticker2 || !(okCond1 || okCond2)) {
+        if (!userName || !buffer || !sticker1 || !sticker2 || !(okCond1 || okCond2) || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyle/corner',
+                endpoint: '/hinemos/threeStyle/',
                 params: {
+                    part,
                     buffer,
                     sticker1,
                     sticker2,
@@ -1431,9 +1569,16 @@ sequelize.sync().then(() => {
         }
 
         const numberOfMoves = utils.getNumberOfMoves(setup, move1, move2);
-        const stickers = buffer + ' ' + sticker1 + ' ' + sticker2;
+        const stickers = `${buffer} ${sticker1} ${sticker2}`;
 
-        ThreeStyleCorner
+        let threeStyleModel;
+        if (part === 'corner') {
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
+        threeStyleModel
             .create({
                 userName,
                 numberOfMoves,
@@ -1455,8 +1600,9 @@ sequelize.sync().then(() => {
 
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
@@ -1476,8 +1622,9 @@ sequelize.sync().then(() => {
             .catch((err) => {
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/threeStyle/corner',
+                    endpoint: '/hinemos/threeStyle/',
                     params: {
+                        part,
                         buffer,
                         sticker1,
                         sticker2,
@@ -1608,7 +1755,7 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.post(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/corner', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/:part', (req, res, next) => {
         const userName = req.decoded.userName;
         const buffer = req.body.buffer;
         const sticker1 = req.body.sticker1;
@@ -1616,13 +1763,15 @@ sequelize.sync().then(() => {
         const usedHint = req.body.usedHint;
         const isRecalled = req.body.isRecalled;
         const sec = req.body.sec;
+        const part = req.params.part;
 
-        if (!userName || !buffer || !sticker1 || !sticker2 || !usedHint || !isRecalled || !sec) {
+        if (!userName || !buffer || !sticker1 || !sticker2 || !usedHint || !isRecalled || !sec || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                endpoint: '/hinemos/threeStyleQuizLog/',
                 params: {
                     userName,
+                    part,
                     buffer,
                     sticker1,
                     sticker2,
@@ -1639,7 +1788,14 @@ sequelize.sync().then(() => {
             return;
         }
 
-        ThreeStyleQuizLogCorner.create({
+        let threeStyleQuizLogModel;
+        if (part === 'corner') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogEdgeMiddle;
+        }
+
+        threeStyleQuizLogModel.create({
             userName,
             buffer,
             sticker1,
@@ -1651,9 +1807,10 @@ sequelize.sync().then(() => {
         }).then((threeStyleQuizLogResult) => {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                endpoint: '/hinemos/threeStyleQuizLog/',
                 params: {
                     userName,
+                    part,
                     buffer,
                     sticker1,
                     sticker2,
@@ -1752,18 +1909,20 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/corner`, (req, res, next) => {
+    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/:part`, (req, res, next) => {
         const userName = req.decoded.userName;
+        const part = req.params.part;
         const threeStyleQuizList = req.body.threeStyleQuizList ? req.body.threeStyleQuizList : [];
         // 形式は [{userName, buffer, sticker1, sticker2, stickers}]
         // userNameはデコードしたuserNameで置き換える
 
-        if (!userName || !threeStyleQuizList) {
+        if (!userName || !threeStyleQuizList || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleQuizList/corner',
+                endpoint: '/hinemos/threeStyleQuizList/',
                 params: {
                     userName,
+                    part,
                     decoded: req.decoded,
                 },
                 status: 'error',
@@ -1774,10 +1933,17 @@ sequelize.sync().then(() => {
             return;
         }
 
+        let threeStyleQuizListModel;
+        if (part === 'corner') {
+            threeStyleQuizListModel = ThreeStyleQuizListCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizListModel = ThreeStyleQuizListEdgeMiddle;
+        }
+
         sequelize
             .transaction((t) => {
                 // まず今のlistを消す
-                return ThreeStyleQuizListCorner
+                return threeStyleQuizListModel
                     .destroy({
                         where: {
                             userName,
@@ -1803,7 +1969,7 @@ sequelize.sync().then(() => {
                             };
 
                             promises.push(
-                                ThreeStyleQuizListCorner
+                                threeStyleQuizListModel
                                     .create(instance, {
                                         transaction: t,
                                     })
@@ -1823,9 +1989,10 @@ sequelize.sync().then(() => {
                             .then((result) => {
                                 logger.emit('api.request', {
                                     requestType: 'POST',
-                                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                                    endpoint: '/hinemos/threeStyleQuizList/',
                                     params: {
                                         userName,
+                                        part,
                                         decoded: req.decoded,
                                     },
                                     status: 'success',
@@ -1846,9 +2013,10 @@ sequelize.sync().then(() => {
                             .catch(() => {
                                 logger.emit('api.request', {
                                     requestType: 'POST',
-                                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                                    endpoint: '/hinemos/threeStyleQuizList/',
                                     params: {
                                         userName,
+                                        part,
                                         decoded: req.decoded,
                                     },
                                     status: 'error',
@@ -1861,16 +2029,18 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.post(process.env.EXPRESS_ROOT + '/threeStyleCornerTable', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/threeStyleTable/:part', (req, res, next) => {
         const userName = req.decoded.userName;
         const threeStyleTable = req.body.threeStyleTable;
+        const part = req.params.part;
 
-        if (!userName || !threeStyleTable) {
+        if (!userName || !threeStyleTable || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleCornerTable',
+                endpoint: '/hinemos/threeStyleTable/',
                 params: {
                     userName,
+                    part,
                     decoded: req.decoded,
                 },
                 status: 'error',
@@ -1881,10 +2051,17 @@ sequelize.sync().then(() => {
             return;
         }
 
+        let threeStyleModel;
+        if (part === 'corner') {
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
         sequelize
             .transaction((t) => {
                 // まず今のthreeStyleを消す
-                return ThreeStyleCorner
+                return threeStyleModel
                     .destroy({
                         where: {
                             userName,
@@ -1912,7 +2089,7 @@ sequelize.sync().then(() => {
                             };
 
                             promises.push(
-                                ThreeStyleCorner
+                                threeStyleModel
                                     .create(instance, {
                                         transaction: t,
                                     })
@@ -1946,9 +2123,10 @@ sequelize.sync().then(() => {
                 if (result === 200) {
                     logger.emit('api.request', {
                         requestType: 'POST',
-                        endpoint: '/hinemos/threeStyleCornerTable',
+                        endpoint: '/hinemos/threeStyleTable/',
                         params: {
                             userName,
+                            part,
                             decoded: req.decoded,
                         },
                         status: 'success',
@@ -1971,9 +2149,10 @@ sequelize.sync().then(() => {
             .catch((err) => {
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/threeStyleCornerTable',
+                    endpoint: '/hinemos/threeStyleTable',
                     params: {
                         userName,
+                        part,
                         decoded: req.decoded,
                     },
                     status: 'error',
@@ -1989,6 +2168,103 @@ sequelize.sync().then(() => {
                 };
 
                 res.status(400).send(badRequestErrorWithParams);
+            });
+    });
+
+    app.post(process.env.EXPRESS_ROOT + '/faceColor/', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const faceColor = req.body.faceColor;
+
+        if (!userName || !faceColor) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/faceColor/',
+                params: {
+                    userName,
+                    faceColor,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        sequelize
+            .transaction((t) => {
+                // まず今のfaceColorを消す
+                return FaceColor
+                    .destroy({
+                        where: {
+                            userName,
+                        },
+                        transaction: t,
+                    })
+                    .then(() => {
+                        // 次に、UIから入力された情報で更新
+                        const promises = [];
+                        const faces = Object.keys(faceColor);
+
+                        for (let i = 0; i < faces.length; i++) {
+                            const face = faces[i];
+                            const color = faceColor[face];
+                            const instance = {
+                                userName,
+                                face,
+                                color,
+                            };
+
+                            promises.push(
+                                FaceColor
+                                    .create(instance, {
+                                        transaction: t,
+                                    })
+                                    .then((result) => {
+                                        return {
+                                            code: 200,
+                                            params: instance,
+                                            msg: 'OK',
+                                        };
+                                    })
+                                    .catch((err) => {
+                                        throw new Error(`面の色の登録中にエラーが発生しました: ${err}`);
+                                    }));
+                        }
+
+                        return Promise.all(promises)
+                            .then((result) => {
+                                logger.emit('api.request', {
+                                    requestType: 'POST',
+                                    endpoint: '/hinemos/faceColor/',
+                                    params: {
+                                        userName,
+                                        faceColor,
+                                        decoded: req.decoded,
+                                    },
+                                    status: 'success',
+                                    code: 200,
+                                    msg: '',
+                                });
+
+                                const ans = {
+                                    success: {
+                                        code: 200,
+                                        result,
+                                    },
+                                };
+
+                                res.json(ans);
+                                res.status(200);
+                            })
+                            .catch((err) => {
+                                throw new Error(err);
+                            });
+                    })
+                    .catch((err) => {
+                        throw new Error(err);
+                    });
             });
     });
 

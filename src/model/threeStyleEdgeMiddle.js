@@ -1,16 +1,16 @@
 const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
-    const corners = [
-        'UBL', 'UBR', 'UFR', 'UFL',
-        'RFU', 'RBU', 'RDF', 'RBD',
-        'LBU', 'LFU', 'LBD', 'LDF',
-        'FLU', 'FRU', 'FDL', 'FDR',
-        'BRU', 'BLU', 'BDR', 'BDL',
-        'DFR', 'DFL', 'DBR', 'DBL',
+    const edges = [
+        'UR', 'UB', 'UL', 'UF',
+        'RF', 'RU', 'RB', 'RD',
+        'LF', 'LU', 'LB', 'LD',
+        'FU', 'FR', 'FD', 'FL',
+        'BR', 'BU', 'BL', 'BD',
+        'DR', 'DF', 'DL', 'DB',
     ];
 
-    const db = sequelize.define('three_style_quiz_log_corner', {
+    const db = sequelize.define('three_style_edge_middle', {
         id: {
             field: 'id',
             type: DataTypes.INTEGER,
@@ -22,44 +22,52 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        numberOfMoves: {
+            field: 'number_of_moves',
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
         buffer: {
             field: 'buffer',
-            type: DataTypes.ENUM(corners),
+            type: DataTypes.ENUM(edges),
             allowNull: false,
         },
         sticker1: {
             field: 'sticker1',
-            type: DataTypes.ENUM(corners),
+            type: DataTypes.ENUM(edges),
             allowNull: false,
         },
         sticker2: {
             field: 'sticker2',
-            type: DataTypes.ENUM(corners),
+            type: DataTypes.ENUM(edges),
             allowNull: false,
         },
+        // buffer[SP]sticker1[SP]sticker2
+        // (buffer, sticker1, sticker2)に対して一意に決まるが、
+        // 簡単のためカラムを用意
         stickers: {
             field: 'stickers',
             type: DataTypes.STRING,
             allowNull: false,
         },
-        usedHint: {
-            field: 'used_hint',
-            type: DataTypes.INTEGER,
+        setup: {
+            field: 'setup',
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        move1: {
+            field: 'move1',
+            type: DataTypes.STRING,
             allowNull: false,
         },
-        isRecalled: {
-            field: 'is_recalled',
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        sec: {
-            field: 'sec',
-            type: DataTypes.FLOAT,
+        move2: {
+            field: 'move2',
+            type: DataTypes.STRING,
             allowNull: false,
         },
     }, {
         freezeTableName: true,
-        tableName: 'three_style_quiz_log_corner',
+        tableName: 'three_style_edge_middle',
         charset: 'utf8',
         collate: 'utf8_unicode_ci',
     });

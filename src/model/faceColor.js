@@ -1,26 +1,25 @@
 const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
-    const db = sequelize.define('letter_pair', {
+    const faces = [ 'B', 'D', 'F', 'L', 'R', 'U', ];
+
+    const db = sequelize.define('face_color', {
         userName: {
             field: 'user_name',
             type: DataTypes.STRING,
             primaryKey: true,
-            allowNull: false,
         },
-        word: {
-            type: DataTypes.STRING,
+        face: {
+            type: DataTypes.ENUM(faces),
             primaryKey: true,
-            allowNull: false,
         },
-        letters: {
-            field: 'letters',
+        color: {
             type: DataTypes.STRING,
             allowNull: false,
         },
     }, {
         freezeTableName: true,
-        tableName: 'letter_pair',
+        tableName: 'face_color',
         charset: 'utf8',
         collate: 'utf8_unicode_ci',
     });
