@@ -1828,18 +1828,20 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/corner`, (req, res, next) => {
+    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/:part`, (req, res, next) => {
         const userName = req.decoded.userName;
+        const part = req.params.part;
         const threeStyleQuizList = req.body.threeStyleQuizList ? req.body.threeStyleQuizList : [];
         // 形式は [{userName, buffer, sticker1, sticker2, stickers}]
         // userNameはデコードしたuserNameで置き換える
 
-        if (!userName || !threeStyleQuizList) {
+        if (!userName || !threeStyleQuizList || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleQuizList/corner',
+                endpoint: '/hinemos/threeStyleQuizList/',
                 params: {
                     userName,
+                    part,
                     decoded: req.decoded,
                 },
                 status: 'error',
@@ -1850,10 +1852,17 @@ sequelize.sync().then(() => {
             return;
         }
 
+        let threeStyleQuizListModel;
+        if (part === 'corner') {
+            threeStyleQuizListModel = ThreeStyleQuizListCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizListModel = ThreeStyleQuizListEdgeMiddle;
+        }
+
         sequelize
             .transaction((t) => {
                 // まず今のlistを消す
-                return ThreeStyleQuizListCorner
+                return threeStyleQuizListModel
                     .destroy({
                         where: {
                             userName,
@@ -1879,7 +1888,7 @@ sequelize.sync().then(() => {
                             };
 
                             promises.push(
-                                ThreeStyleQuizListCorner
+                                threeStyleQuizListModel
                                     .create(instance, {
                                         transaction: t,
                                     })
@@ -1899,9 +1908,10 @@ sequelize.sync().then(() => {
                             .then((result) => {
                                 logger.emit('api.request', {
                                     requestType: 'POST',
-                                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                                    endpoint: '/hinemos/threeStyleQuizList/',
                                     params: {
                                         userName,
+                                        part,
                                         decoded: req.decoded,
                                     },
                                     status: 'success',
@@ -1922,9 +1932,10 @@ sequelize.sync().then(() => {
                             .catch(() => {
                                 logger.emit('api.request', {
                                     requestType: 'POST',
-                                    endpoint: '/hinemos/threeStyleQuizList/corner',
+                                    endpoint: '/hinemos/threeStyleQuizList/',
                                     params: {
                                         userName,
+                                        part,
                                         decoded: req.decoded,
                                     },
                                     status: 'error',
