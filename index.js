@@ -2107,5 +2107,102 @@ sequelize.sync().then(() => {
             });
     });
 
+    app.post(process.env.EXPRESS_ROOT + '/faceColor/', (req, res, next) => {
+        const userName = req.decoded.userName;
+        const faceColor = req.body.faceColor;
+
+        if (!userName || !faceColor) {
+            logger.emit('api.request', {
+                requestType: 'POST',
+                endpoint: '/hinemos/faceColor/',
+                params: {
+                    userName,
+                    faceColor,
+                    decoded: req.decoded,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        sequelize
+            .transaction((t) => {
+                // まず今のfaceColorを消す
+                return FaceColor
+                    .destroy({
+                        where: {
+                            userName,
+                        },
+                        transaction: t,
+                    })
+                    .then(() => {
+                        // 次に、UIから入力された情報で更新
+                        const promises = [];
+                        const faces = Object.keys(faceColor);
+
+                        for (let i = 0; i < faces.length; i++) {
+                            const face = faces[i];
+                            const color = faceColor[face];
+                            const instance = {
+                                userName,
+                                face,
+                                color,
+                            };
+
+                            promises.push(
+                                FaceColor
+                                    .create(instance, {
+                                        transaction: t,
+                                    })
+                                    .then((result) => {
+                                        return {
+                                            code: 200,
+                                            params: instance,
+                                            msg: 'OK',
+                                        };
+                                    })
+                                    .catch((err) => {
+                                        throw new Error(`面の色の登録中にエラーが発生しました: ${err}`);
+                                    }));
+                        }
+
+                        return Promise.all(promises)
+                            .then((result) => {
+                                logger.emit('api.request', {
+                                    requestType: 'POST',
+                                    endpoint: '/hinemos/faceColor/',
+                                    params: {
+                                        userName,
+                                        faceColor,
+                                        decoded: req.decoded,
+                                    },
+                                    status: 'success',
+                                    code: 200,
+                                    msg: '',
+                                });
+
+                                const ans = {
+                                    success: {
+                                        code: 200,
+                                        result,
+                                    },
+                                };
+
+                                res.json(ans);
+                                res.status(200);
+                            })
+                            .catch((err) => {
+                                throw new Error(err);
+                            });
+                    })
+                    .catch((err) => {
+                        throw new Error(err);
+                    });
+            });
+    });
+
     app.listen(process.env.EXPRESS_PORT);
 });
