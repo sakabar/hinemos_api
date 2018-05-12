@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
-    let db = sequelize.define('letter_pair_quiz_log', {
+    const db = sequelize.define('letter_pair_quiz_log', {
         id: {
             field: 'id',
             type: DataTypes.INTEGER,

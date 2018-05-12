@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
-    let db = sequelize.define('letter_pair', {
+    const db = sequelize.define('letter_pair', {
         userName: {
             field: 'user_name',
             type: DataTypes.STRING,
