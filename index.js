@@ -1662,7 +1662,7 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.post(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/corner', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/:part', (req, res, next) => {
         const userName = req.decoded.userName;
         const buffer = req.body.buffer;
         const sticker1 = req.body.sticker1;
@@ -1670,13 +1670,15 @@ sequelize.sync().then(() => {
         const usedHint = req.body.usedHint;
         const isRecalled = req.body.isRecalled;
         const sec = req.body.sec;
+        const part = req.params.part;
 
-        if (!userName || !buffer || !sticker1 || !sticker2 || !usedHint || !isRecalled || !sec) {
+        if (!userName || !buffer || !sticker1 || !sticker2 || !usedHint || !isRecalled || !sec || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                endpoint: '/hinemos/threeStyleQuizLog/',
                 params: {
                     userName,
+                    part,
                     buffer,
                     sticker1,
                     sticker2,
@@ -1693,7 +1695,14 @@ sequelize.sync().then(() => {
             return;
         }
 
-        ThreeStyleQuizLogCorner.create({
+        let threeStyleQuizLogModel;
+        if (part === 'corner') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogEdgeMiddle;
+        }
+
+        threeStyleQuizLogModel.create({
             userName,
             buffer,
             sticker1,
@@ -1705,9 +1714,10 @@ sequelize.sync().then(() => {
         }).then((threeStyleQuizLogResult) => {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                endpoint: '/hinemos/threeStyleQuizLog/',
                 params: {
                     userName,
+                    part,
                     buffer,
                     sticker1,
                     sticker2,
