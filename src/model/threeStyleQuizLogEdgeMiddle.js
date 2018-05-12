@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
         'DR', 'DF', 'DL', 'DB',
     ];
 
-    const db = sequelize.define('three_style_edge', {
+    let db = sequelize.define('three_style_quiz_log_edge_middle', {
         id: {
             field: 'id',
             type: DataTypes.INTEGER,
@@ -37,24 +37,29 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM(edges),
             allowNull: false,
         },
-        setup: {
-            field: 'setup',
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        move1: {
-            field: 'move1',
+        stickers: {
+            field: 'stickers',
             type: DataTypes.STRING,
             allowNull: false,
         },
-        move2: {
-            field: 'move2',
-            type: DataTypes.STRING,
+        usedHint: {
+            field: 'used_hint',
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        isRecalled: {
+            field: 'is_recalled',
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        sec: {
+            field: 'sec',
+            type: DataTypes.FLOAT,
             allowNull: false,
         },
     }, {
         freezeTableName: true,
-        tableName: 'three_style_edge',
+        tableName: 'three_style_quiz_log_edge_middle',
         charset: 'utf8',
         collate: 'utf8_unicode_ci',
     });
