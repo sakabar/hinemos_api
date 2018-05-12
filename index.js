@@ -621,16 +621,18 @@ sequelize.sync().then(() => {
     });
 
     // lettersから3-styleを引く
-    app.get(process.env.EXPRESS_ROOT + '/threeStyleFromLetters/corner', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/threeStyleFromLetters/:part', (req, res, next) => {
         const userName = req.query.userName;
         const letters = req.query.letters;
+        const part = req.params.part;
 
-        if (!userName || !letters) {
+        if (!userName || !letters || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/threeStyleFromLetters/corner',
+                endpoint: '/hinemos/threeStyleFromLetters/',
                 params: {
                     userName,
+                    part,
                     letters,
                 },
                 status: 'error',
@@ -649,16 +651,27 @@ sequelize.sync().then(() => {
             },
         };
 
-        return NumberingCorner
+        let numberingModel;
+        let threeStyleModel;
+        if (part === 'corner') {
+            numberingModel = NumberingCorner;
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            numberingModel = NumberingEdgeMiddle;
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
+        return numberingModel
             .findAll(numberingQuery)
             .then((results) => {
                 // buffer, sticker1, sticker2 で 3
                 if (results.length !== 3) {
                     logger.emit('api.request', {
                         requestType: 'GET',
-                        endpoint: '/hinemos/threeStyleFromLetters/corner',
+                        endpoint: '/hinemos/threeStyleFromLetters/',
                         params: {
                             userName,
+                            part,
                             letters,
                         },
                         status: 'error',
@@ -683,14 +696,15 @@ sequelize.sync().then(() => {
                     },
                 };
 
-                return ThreeStyleCorner
+                return threeStyleModel
                     .findAll(threeStyleQuery)
                     .then((threeStyles) => {
                         logger.emit('api.request', {
                             requestType: 'GET',
-                            endpoint: '/hinemos/threeStyleFromLetters/corner',
+                            endpoint: '/hinemos/threeStyleFromLetters/',
                             params: {
                                 userName,
+                                part,
                                 letters,
                             },
                             status: 'success',
@@ -710,9 +724,10 @@ sequelize.sync().then(() => {
                     .catch(() => {
                         logger.emit('api.request', {
                             requestType: 'GET',
-                            endpoint: '/hinemos/threeStyleFromLetters/corner',
+                            endpoint: '/hinemos/threeStyleFromLetters/',
                             params: {
                                 userName,
+                                part,
                                 letters,
                             },
                             status: 'error',
@@ -726,9 +741,10 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleFromLetters/corner',
+                    endpoint: '/hinemos/threeStyleFromLetters/',
                     params: {
                         userName,
+                        part,
                         letters,
                     },
                     status: 'error',
