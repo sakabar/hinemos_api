@@ -169,6 +169,7 @@ const sequelize = new Sequelize(
 );
 
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
+const FaceColor = sequelize.import(path.join(__dirname, '/src/model/faceColor'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
 const LetterPairQuizLog = sequelize.import(path.join(__dirname, '/src/model/letterPairQuizLog'));
 const NumberingCorner = sequelize.import(path.join(__dirname, '/src/model/numberingCorner'));
