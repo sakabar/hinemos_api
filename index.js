@@ -82,7 +82,7 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
 // stickers単位でそれぞれ直近の3つまで取ってくる
 // 新しい順にソート済という想定
 // FIXME テスト書く
-const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
+const getRecentThreeStyleQuizLogs = (quizLogs) => {
     const avgNum = 3; // mo3
     const ans = {};
 
@@ -118,8 +118,8 @@ const getRecentThreeStyleCornerQuizLogs = (quizLogs) => {
 // カラムは 'user_name', 'letters', avg('sec'), is_recalled の4つ
 // 1つのuserNameしか入っていないと仮定
 // キーはユニークであると仮定
-const calcRecentMo3OfThreeStyleCornerQuizLog = (quizLogs) => {
-    const recent = getRecentThreeStyleCornerQuizLogs(quizLogs);
+const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
+    const recent = getRecentThreeStyleQuizLogs(quizLogs);
     const ans = [];
 
     for (let stickers of Object.keys(recent)) {
@@ -176,6 +176,7 @@ const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/nu
 const ThreeStyleCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleCorner'));
 const ThreeStyleEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleEdgeMiddle'));
 const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogCorner'));
+const ThreeStyleQuizLogEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogEdgeMiddle'));
 const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
 
 const getHashedPassword = (userName, password) => {
@@ -821,15 +822,17 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/corner/:userName', (req, res, next) => {
+    app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/:part/:userName', (req, res, next) => {
         const userName = req.params.userName;
+        const part = req.params.part;
 
-        if (!userName) {
+        if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'GET',
-                endpoint: '/hinemos/threeStyleQuizLog/corner',
+                endpoint: '/hinemos/threeStyleQuizLog/',
                 params: {
                     userName,
+                    part,
                 },
                 status: 'error',
                 code: 400,
@@ -865,14 +868,22 @@ sequelize.sync().then(() => {
             ],
         };
 
-        return ThreeStyleQuizLogCorner
+        let threeStyleQuizLogModel;
+        if (part === 'corner') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleQuizLogModel = ThreeStyleQuizLogEdgeMiddle;
+        }
+
+        return threeStyleQuizLogModel
             .findAll(query)
             .then((result) => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizLog/corner',
+                    endpoint: '/hinemos/threeStyleQuizLog/',
                     params: {
                         userName,
+                        part,
                     },
                     status: 'success',
                     code: 200,
@@ -882,7 +893,7 @@ sequelize.sync().then(() => {
                 const ans = {
                     success: {
                         code: 200,
-                        result: calcRecentMo3OfThreeStyleCornerQuizLog(result),
+                        result: calcRecentMo3OfThreeStyleQuizLog(result),
                     },
                 };
                 res.json(ans);
@@ -891,9 +902,10 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'GET',
-                    endpoint: '/hinemos/threeStyleQuizLog/corner',
+                    endpoint: '/hinemos/threeStyleQuizLog/',
                     params: {
                         userName,
+                        part,
                     },
                     status: 'error',
                     code: 400,
