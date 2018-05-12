@@ -1948,16 +1948,18 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.post(process.env.EXPRESS_ROOT + '/threeStyleCornerTable', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/threeStyleTable/:part', (req, res, next) => {
         const userName = req.decoded.userName;
         const threeStyleTable = req.body.threeStyleTable;
+        const part = req.params.part;
 
-        if (!userName || !threeStyleTable) {
+        if (!userName || !threeStyleTable || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/threeStyleCornerTable',
+                endpoint: '/hinemos/threeStyleTable/',
                 params: {
                     userName,
+                    part,
                     decoded: req.decoded,
                 },
                 status: 'error',
@@ -1968,10 +1970,17 @@ sequelize.sync().then(() => {
             return;
         }
 
+        let threeStyleModel;
+        if (part === 'corner') {
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
         sequelize
             .transaction((t) => {
                 // まず今のthreeStyleを消す
-                return ThreeStyleCorner
+                return threeStyleModel
                     .destroy({
                         where: {
                             userName,
@@ -1999,7 +2008,7 @@ sequelize.sync().then(() => {
                             };
 
                             promises.push(
-                                ThreeStyleCorner
+                                threeStyleModel
                                     .create(instance, {
                                         transaction: t,
                                     })
@@ -2033,9 +2042,10 @@ sequelize.sync().then(() => {
                 if (result === 200) {
                     logger.emit('api.request', {
                         requestType: 'POST',
-                        endpoint: '/hinemos/threeStyleCornerTable',
+                        endpoint: '/hinemos/threeStyleTable/',
                         params: {
                             userName,
+                            part,
                             decoded: req.decoded,
                         },
                         status: 'success',
@@ -2058,9 +2068,10 @@ sequelize.sync().then(() => {
             .catch((err) => {
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/threeStyleCornerTable',
+                    endpoint: '/hinemos/threeStyleTable',
                     params: {
                         userName,
+                        part,
                         decoded: req.decoded,
                     },
                     status: 'error',
