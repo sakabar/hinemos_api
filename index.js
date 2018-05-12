@@ -1010,6 +1010,70 @@ sequelize.sync().then(() => {
             });
     });
 
+    app.get(`${process.env.EXPRESS_ROOT}/faceColor/:userName`, (req, res, next) => {
+        const userName = req.params.userName;
+
+        if (!userName) {
+            logger.emit('api.request', {
+                requestType: 'GET',
+                endpoint: '/hinemos/faceColor/',
+                params: {
+                    userName,
+                },
+                status: 'error',
+                code: 400,
+                msg: '',
+            });
+
+            res.status(400).send(badRequestError);
+            return;
+        }
+
+        const query = {
+            where: {
+                userName,
+            },
+        };
+
+        return FaceColor
+            .findAll(query)
+            .then((result) => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/faceColor/',
+                    params: {
+                        userName,
+                    },
+                    status: 'success',
+                    code: 200,
+                    msg: '',
+                });
+
+                const ans = {
+                    success: {
+                        code: 200,
+                        result,
+                    },
+                };
+                res.json(ans);
+                res.status(200);
+            })
+            .catch(() => {
+                logger.emit('api.request', {
+                    requestType: 'GET',
+                    endpoint: '/hinemos/faceColor/',
+                    params: {
+                        userName,
+                    },
+                    status: 'error',
+                    code: 400,
+                    msg: '',
+                });
+
+                res.status(400).send(badRequestError);
+            });
+    });
+
     // Authentification Filter
     app.use((req, res, next) => {
         // get token from body:token or query:token of Http Header:x-access-token
