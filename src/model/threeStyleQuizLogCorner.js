@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
         'DFR', 'DFL', 'DBR', 'DBL',
     ];
 
-    let db = sequelize.define('letter_pair_quiz_log', {
+    let db = sequelize.define('three_style_quiz_log_corner', {
         id: {
             field: 'id',
             type: DataTypes.INTEGER,
