@@ -842,6 +842,7 @@ sequelize.sync().then(() => {
 
     app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/:part/:userName', (req, res, next) => {
         const userName = req.params.userName;
+        const days = parseInt(req.query.days ? req.query.days : process.env.THREE_STYLE_QUIZ_LOG_RECENT); // 「n日間に」解いた問題
         const part = req.params.part;
 
         if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
@@ -875,7 +876,7 @@ sequelize.sync().then(() => {
                 userName,
                 // 最近の記録のみ使用
                 createdAt: {
-                    [Op.gt]: new Date(new Date() - process.env.THREE_STYLE_QUIZ_LOG_RECENT),
+                    [Op.gt]: new Date(new Date() - days * (60 * 60 * 24 * 1000)), // ミリ秒に変換
                 },
             },
             order: [
