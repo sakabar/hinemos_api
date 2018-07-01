@@ -1839,14 +1839,15 @@ sequelize.sync().then(() => {
     // 本当はDELETEメソッドを使いたいが、request-promiseでなぜかDELETEメソッドが使えなかったので
     // POSTで代用
     // FIXME
-    app.post(process.env.EXPRESS_ROOT + '/deleteThreeStyle/corner', (req, res, next) => {
+    app.post(process.env.EXPRESS_ROOT + '/deleteThreeStyle/:part', (req, res, next) => {
         const userName = req.decoded.userName;
         const id = req.body.id;
+        const part = req.params.part;
 
         if (!userName) {
             logger.emit('api.request', {
                 requestType: 'POST',
-                endpoint: '/hinemos/deleteThreeStyle/corner',
+                endpoint: `/hinemos/deleteThreeStyle/${part}`,
                 params: {
                     userName,
                     id,
@@ -1868,12 +1869,19 @@ sequelize.sync().then(() => {
             },
         };
 
-        ThreeStyleCorner
+        let threeStyleModel;
+        if (part === 'corner') {
+            threeStyleModel = ThreeStyleCorner;
+        } else if (part === 'edgeMiddle') {
+            threeStyleModel = ThreeStyleEdgeMiddle;
+        }
+
+        threeStyleModel
             .destroy(query)
             .then((result) => {
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/deleteThreeStyle/corner',
+                    endpoint: `/hinemos/deleteThreeStyle/${part}`,
                     params: {
                         userName,
                         id,
@@ -1896,7 +1904,7 @@ sequelize.sync().then(() => {
             .catch(() => {
                 logger.emit('api.request', {
                     requestType: 'POST',
-                    endpoint: '/hinemos/deleteThreeStyle/corner',
+                    endpoint: `/hinemos/deleteThreeStyle/${part}`,
                     params: {
                         userName,
                         id,
