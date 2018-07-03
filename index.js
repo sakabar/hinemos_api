@@ -5,6 +5,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
 const math = require('mathjs');
+const moment = require('moment');
 const path = require('path');
 const utils = require('./src/lib/utils');
 const Sequelize = require('sequelize');
@@ -101,6 +102,7 @@ const getRecentThreeStyleQuizLogs = (quizLogs) => {
             sticker2: quizLog.sticker2,
             stickers,
             sec,
+            createdAt: quizLog.createdAt,
         };
 
         if (!ans[stickers]) {
@@ -115,7 +117,7 @@ const getRecentThreeStyleQuizLogs = (quizLogs) => {
 };
 
 // FIXME ロジックが重複?
-// カラムは 'user_name', 'letters', avg('sec'), is_recalled の4つ
+// カラムは 'user_name', 'letters', avg('sec'), is_recalled, newness の4つ
 // 1つのuserNameしか入っていないと仮定
 // キーはユニークであると仮定
 const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
@@ -131,6 +133,10 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
 
         const avgSec = math.mean(arr.map(x => x.sec));
 
+        // 今の時刻が入っているから純粋ではない
+        // 鮮度は0以下の整数、単位は「日」
+        const newness = -Math.min(...arr.map(x => moment().diff(moment(x.createdAt), 'days')));
+
         // スネークケースに戻す
         const obj = {
             'user_name': userName,
@@ -139,6 +145,7 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
             sticker2,
             stickers,
             'avg_sec': avgSec,
+            newness,
         };
         ans.push(obj);
     }
@@ -871,6 +878,7 @@ sequelize.sync().then(() => {
                 'stickers',
                 [ 'is_recalled', 'isRecalled', ],
                 'sec',
+                [ 'createdAt', 'createdAt', ],
             ],
             where: {
                 userName,
