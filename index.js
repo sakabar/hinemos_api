@@ -436,7 +436,9 @@ sequelize.sync().then(() => {
     // 直近28日(envファイルで指定)の中で、直近の mean of 3 を計算
     app.get(process.env.EXPRESS_ROOT + '/letterPairQuizLog/:userName', (req, res, next) => {
         const userName = req.params.userName;
-        const days = parseInt(req.query.days ? req.query.days : process.env.LETTER_PAIR_QUIZ_LOG_RECENT); // 「n日間に」解いた問題
+        // 「n日間に」解いた問題
+        const tmpDays = parseFloat(req.query.days);
+        const days = isNaN(tmpDays) ? parseFloat(process.env.LETTER_PAIR_QUIZ_LOG_RECENT) : tmpDays;
 
         if (!userName) {
             logger.emit('api.request', {
@@ -849,7 +851,9 @@ sequelize.sync().then(() => {
 
     app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/:part/:userName', (req, res, next) => {
         const userName = req.params.userName;
-        const days = parseInt(req.query.days ? req.query.days : process.env.THREE_STYLE_QUIZ_LOG_RECENT); // 「n日間に」解いた問題
+        // 「n日間に」解いた問題
+        const tmpDays = parseFloat(req.query.days);
+        const days = isNaN(tmpDays) ? parseFloat(process.env.THREE_STYLE_QUIZ_LOG_RECENT) : tmpDays;
         const part = req.params.part;
 
         if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
