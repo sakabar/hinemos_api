@@ -82,8 +82,8 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
         ans.push(obj);
     }
 
-    // 正答数の昇順、その中でavg_secの降順でソートして返す
-    return ans.sort((a, b) => (a.solved - b.solved) || -(a['avg_sec'] - b['avg_sec']));
+    // 正答数の昇順、トライ数の降順、その中でavg_secの降順でソートして返す
+    return ans.sort((a, b) => (a.solved - b.solved) || -(a.tried - b.tried) || -(a['avg_sec'] - b['avg_sec']));
 };
 
 // FIXME 同じようなメソッドが2つ…
@@ -164,8 +164,8 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
         ans.push(obj);
     }
 
-    // 正答数の昇順、その中でavg_secの降順でソートして返す
-    return ans.sort((a, b) => (a.solved - b.solved) || -(a['avg_sec'] - b['avg_sec']));
+    // 正答数の昇順、トライ数の降順、その中でavg_secの降順でソートして返す
+    return ans.sort((a, b) => (a.solved - b.solved) || -(a.tried - b.tried) || -(a['avg_sec'] - b['avg_sec']));
 };
 
 const sequelize = new Sequelize(
