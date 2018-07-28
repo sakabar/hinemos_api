@@ -32,13 +32,13 @@ const getRecentLetterPairQuizLogs = (quizLogs) => {
     for (let i = 0; i < quizLogs.length; i++) {
         const quizLog = quizLogs[i];
         const letters = quizLog.letters;
-
-        // 間違えた問題は60秒として扱う
-        const sec = quizLog.isRecalled === 1 ? quizLog.sec : 60.0;
+        const isRecalled = quizLog.isRecalled;
+        const sec = quizLog.sec;
 
         const obj = {
             userName: quizLog.userName,
             letters,
+            isRecalled,
             sec,
         };
 
@@ -64,19 +64,26 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
         const arr = recent[letters];
         const userName = arr[0].userName;
 
-        const avgSec = math.mean(arr.map(x => x.sec));
+        const solved = math.sum(arr.map(x => x.isRecalled));
+        const tried = arr.length;
+
+        // avgSecは、解けた問題についてのみ計算
+        const secSolved = arr.filter(x => x.isRecalled === 1).map(x => x.sec);
+        const avgSec = secSolved.length === 0 ? 0.0 : math.mean(secSolved);
 
         // スネークケースに戻す
         const obj = {
             'user_name': userName,
             letters,
+            solved,
+            tried,
             'avg_sec': avgSec,
         };
         ans.push(obj);
     }
 
-    // avg_secの昇順でソートして返す
-    return ans.sort((a, b) => -(a['avg_sec'] - b['avg_sec']));
+    // 正答数の昇順、その中でavg_secの降順でソートして返す
+    return ans.sort((a, b) => (a.solved - b.solved) || -(a['avg_sec'] - b['avg_sec']));
 };
 
 // FIXME 同じようなメソッドが2つ…
@@ -91,9 +98,8 @@ const getRecentThreeStyleQuizLogs = (quizLogs) => {
     for (let i = 0; i < quizLogs.length; i++) {
         const quizLog = quizLogs[i];
         const stickers = quizLog.stickers;
-
-        // 間違えていたら解答時間は20秒として扱う
-        const sec = quizLog.isRecalled === 1 ? quizLog.sec : 20.0;
+        const isRecalled = quizLog.isRecalled;
+        const sec = quizLog.sec;
 
         const obj = {
             userName: quizLog.userName,
@@ -101,6 +107,7 @@ const getRecentThreeStyleQuizLogs = (quizLogs) => {
             sticker1: quizLog.sticker1,
             sticker2: quizLog.sticker2,
             stickers,
+            isRecalled,
             sec,
             createdAt: quizLog.createdAt,
         };
@@ -131,7 +138,12 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
         const sticker1 = arr[0].sticker1;
         const sticker2 = arr[0].sticker2;
 
-        const avgSec = math.mean(arr.map(x => x.sec));
+        const solved = math.sum(arr.map(x => x.isRecalled));
+        const tried = arr.length;
+
+        // avgSecは、解けた問題についてのみ計算
+        const secSolved = arr.filter(x => x.isRecalled === 1).map(x => x.sec);
+        const avgSec = secSolved.length === 0 ? 0.0 : math.mean(secSolved);
 
         // 今の時刻が入っているから純粋ではない
         // 鮮度は0以下の整数、単位は「日」
@@ -144,14 +156,16 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
             sticker1,
             sticker2,
             stickers,
+            solved,
+            tried,
             'avg_sec': avgSec,
             newness,
         };
         ans.push(obj);
     }
 
-    // avg_secの昇順でソートして返す
-    return ans.sort((a, b) => -(a['avg_sec'] - b['avg_sec']));
+    // 正答数の昇順、その中でavg_secの降順でソートして返す
+    return ans.sort((a, b) => (a.solved - b.solved) || -(a['avg_sec'] - b['avg_sec']));
 };
 
 const sequelize = new Sequelize(
