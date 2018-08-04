@@ -2,6 +2,8 @@ require('dotenv').config();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const express = require('express');
+const fs = require('fs');
+const https = require('https');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
 const math = require('mathjs');
@@ -212,6 +214,11 @@ const getHashedPassword = (userName, password) => {
 // sequelize.sync({force: true}).then(() => {
 sequelize.sync().then(() => {
     const app = express();
+    const options = {
+        key:  fs.readFileSync(process.env.HTTPS_KEY_PATH),
+        cert: fs.readFileSync(process.env.HTTPS_CERT_PATH),
+    };
+    const server = https.createServer(options, app);
 
     app.use(bodyParser.urlencoded({
         limit: '1mb', // データ量の上限
@@ -2303,5 +2310,5 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.listen(process.env.EXPRESS_PORT);
+    server.listen(process.env.EXPRESS_PORT);
 });
