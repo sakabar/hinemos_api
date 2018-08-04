@@ -215,7 +215,7 @@ const getHashedPassword = (userName, password) => {
 sequelize.sync().then(() => {
     const app = express();
     const options = {
-        key:  fs.readFileSync(process.env.HTTPS_KEY_PATH),
+        key: fs.readFileSync(process.env.HTTPS_KEY_PATH),
         cert: fs.readFileSync(process.env.HTTPS_CERT_PATH),
     };
     const server = https.createServer(options, app);
