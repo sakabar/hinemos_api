@@ -2,6 +2,8 @@ require('dotenv').config();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const express = require('express');
+const fs = require('fs');
+const https = require('https');
 const jwt = require('jsonwebtoken');
 const logger = require('fluent-logger');
 const math = require('mathjs');
@@ -82,8 +84,8 @@ const calcRecentMo3OfLetterPairQuizLog = (quizLogs) => {
         ans.push(obj);
     }
 
-    // 正答数の昇順、その中でavg_secの降順でソートして返す
-    return ans.sort((a, b) => (a.solved - b.solved) || -(a['avg_sec'] - b['avg_sec']));
+    // 正答数の昇順、トライ数の降順、その中でavg_secの降順でソートして返す
+    return ans.sort((a, b) => (a.solved - b.solved) || -(a.tried - b.tried) || -(a['avg_sec'] - b['avg_sec']));
 };
 
 // FIXME 同じようなメソッドが2つ…
@@ -164,8 +166,8 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
         ans.push(obj);
     }
 
-    // 正答数の昇順、その中でavg_secの降順でソートして返す
-    return ans.sort((a, b) => (a.solved - b.solved) || -(a['avg_sec'] - b['avg_sec']));
+    // 正答数の昇順、トライ数の降順、その中でavg_secの降順でソートして返す
+    return ans.sort((a, b) => (a.solved - b.solved) || -(a.tried - b.tried) || -(a['avg_sec'] - b['avg_sec']));
 };
 
 const sequelize = new Sequelize(
@@ -212,6 +214,11 @@ const getHashedPassword = (userName, password) => {
 // sequelize.sync({force: true}).then(() => {
 sequelize.sync().then(() => {
     const app = express();
+    const options = {
+        key: fs.readFileSync(process.env.HTTPS_KEY_PATH),
+        cert: fs.readFileSync(process.env.HTTPS_CERT_PATH),
+    };
+    const server = https.createServer(options, app);
 
     app.use(bodyParser.urlencoded({
         limit: '1mb', // データ量の上限
@@ -2303,5 +2310,5 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.listen(process.env.EXPRESS_PORT);
+    server.listen(process.env.EXPRESS_PORT);
 });
