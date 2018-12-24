@@ -3,6 +3,7 @@
   "version": "0.10.0",
   "description": "",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "eslint": "eslint index.js test/**/*.js src/**/*.js",
     "start": "node index.js",
