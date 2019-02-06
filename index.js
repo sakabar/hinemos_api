@@ -1,4 +1,5 @@
 require('dotenv').config();
+const _ = require('lodash');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const express = require('express');
@@ -415,7 +416,14 @@ sequelize.sync().then(() => {
             query.where.userName = userName;
         }
 
-        LetterPair.findAll(query).then((result) => {
+        LetterPair.findAll(query).then((tmpResult) => {
+            // ユーザ名をマスク
+            const result = _.cloneDeep(tmpResult);
+            for (let i = 0; i < result.length; i++) {
+                const masked = getHashedPassword(result[i].userName, 'dummy');
+                result[i].setDataValue('userName', masked);
+            }
+
             logger.emit('api.request', {
                 requestType: 'GET',
                 endpoint: '/hinemos/letterPair',
