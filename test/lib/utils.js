@@ -4,7 +4,7 @@ const utils = require('../../src/lib/utils');
 describe('utils.js', () => {
     describe('getMoveType', () => {
         it('正常系: Lw\'2', () => {
-            assert.equal(utils.getMoveType('Lw\'2'), 'Lw');
+            assert.deepStrictEqual(utils.getMoveType('Lw\'2'), 'Lw');
         });
 
         it('異常系: 入力が空の場合はエラー', () => {
@@ -23,7 +23,7 @@ describe('utils.js', () => {
             const move2Arr = [ 'R', 'D', 'R\'', ];
             const expected = 0;
             const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
-            assert.equal(actual, expected);
+            assert.deepStrictEqual(actual, expected);
         });
 
         it('正常系: setupとmove1で重複', () => {
@@ -32,7 +32,7 @@ describe('utils.js', () => {
             const move2Arr = [ 'U', ];
             const expected = 1;
             const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
-            assert.equal(actual, expected);
+            assert.deepStrictEqual(actual, expected);
         });
 
         it('正常系: setupとmove2で重複', () => {
@@ -41,7 +41,7 @@ describe('utils.js', () => {
             const move2Arr = [ 'R', 'D', 'R\'', ];
             const expected = 1;
             const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
-            assert.equal(actual, expected);
+            assert.deepStrictEqual(actual, expected);
         });
     });
 
@@ -52,7 +52,7 @@ describe('utils.js', () => {
             const move2 = 'R D R\'';
             const expected = 8;
             const actual = utils.getNumberOfMoves(setup, move1, move2);
-            assert.equal(actual, expected);
+            assert.deepStrictEqual(actual, expected);
         });
 
         it('正常系: setupとmove1で重複', () => {
@@ -61,7 +61,7 @@ describe('utils.js', () => {
             const move2 = 'U';
             const expected = 9;
             const actual = utils.getNumberOfMoves(setup, move1, move2);
-            assert.equal(actual, expected);
+            assert.deepStrictEqual(actual, expected);
         });
 
         it('正常系: setupとmove2で重複', () => {
@@ -70,7 +70,7 @@ describe('utils.js', () => {
             const move2 = 'R D R\'';
             const expected = 9;
             const actual = utils.getNumberOfMoves(setup, move1, move2);
-            assert.equal(actual, expected);
+            assert.deepStrictEqual(actual, expected);
         });
 
         it('正常系: setupのみ', () => {
@@ -79,7 +79,7 @@ describe('utils.js', () => {
             const move2 = '';
             const expected = 9;
             const actual = utils.getNumberOfMoves(setup, move1, move2);
-            assert.equal(actual, expected);
+            assert.deepStrictEqual(actual, expected);
         });
     });
 });
