@@ -2091,6 +2091,7 @@ sequelize.sync().then(() => {
         const userName = req.decoded.userName;
         const threeStyleTable = req.body.threeStyleTable;
         const part = req.params.part;
+        const buffer = req.body.buffer;
 
         if (!userName || !threeStyleTable || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
@@ -2116,14 +2117,20 @@ sequelize.sync().then(() => {
             threeStyleModel = ThreeStyleEdgeMiddle;
         }
 
+        const destroyCond = {
+            userName,
+        };
+
+        if (typeof buffer !== 'undefined') {
+            destroyCond.buffer = buffer;
+        };
+
         sequelize
             .transaction((t) => {
                 // まず今のthreeStyleを消す
                 return threeStyleModel
                     .destroy({
-                        where: {
-                            userName,
-                        },
+                        where: destroyCond,
                         transaction: t,
                     })
                     .then(() => {
