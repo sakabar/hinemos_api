@@ -884,6 +884,7 @@ sequelize.sync().then(() => {
         const tmpDays = parseFloat(req.query.days);
         const days = isNaN(tmpDays) ? parseFloat(process.env.THREE_STYLE_QUIZ_LOG_RECENT) : tmpDays;
         const part = req.params.part;
+        const buffer = req.query.buffer;
 
         if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
@@ -902,6 +903,19 @@ sequelize.sync().then(() => {
             return;
         }
 
+        const whereCond = {
+            userName,
+            // 最近の記録のみ使用
+            createdAt: {
+                [Op.gt]: new Date(new Date() - days * (60 * 60 * 24 * 1000)), // ミリ秒に変換
+            },
+        };
+
+        // バッファが指定された場合は条件に含める
+        if (typeof buffer !== 'undefined') {
+            whereCond.buffer = buffer;
+        }
+
         const query = {
             attributes: [
                 [ 'user_name', 'userName', ],
@@ -913,13 +927,7 @@ sequelize.sync().then(() => {
                 'sec',
                 [ 'createdAt', 'createdAt', ],
             ],
-            where: {
-                userName,
-                // 最近の記録のみ使用
-                createdAt: {
-                    [Op.gt]: new Date(new Date() - days * (60 * 60 * 24 * 1000)), // ミリ秒に変換
-                },
-            },
+            where: whereCond,
             order: [
                 [
                     'createdAt',
@@ -2083,6 +2091,7 @@ sequelize.sync().then(() => {
         const userName = req.decoded.userName;
         const threeStyleTable = req.body.threeStyleTable;
         const part = req.params.part;
+        const buffer = req.body.buffer;
 
         if (!userName || !threeStyleTable || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
@@ -2108,14 +2117,20 @@ sequelize.sync().then(() => {
             threeStyleModel = ThreeStyleEdgeMiddle;
         }
 
+        const destroyCond = {
+            userName,
+        };
+
+        if (typeof buffer !== 'undefined') {
+            destroyCond.buffer = buffer;
+        };
+
         sequelize
             .transaction((t) => {
                 // まず今のthreeStyleを消す
                 return threeStyleModel
                     .destroy({
-                        where: {
-                            userName,
-                        },
+                        where: destroyCond,
                         transaction: t,
                     })
                     .then(() => {
