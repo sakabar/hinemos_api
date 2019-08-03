@@ -33,13 +33,15 @@ const getNumberOfOverlappedMoves = (setupArr, move1Arr, move2Arr) => {
 };
 
 const getNumberOfMoves = (setup, move1, move2) => {
-    const setupArr = setup.split(' ').filter(x => x);
+    const rotateNotaions = [ 'x', 'x\'', 'y', 'y\'', 'z', 'z\'', ];
+
+    const setupArr = setup.split(' ').filter(x => x).filter(x => !rotateNotaions.includes(x));
     const setupLn = setupArr.length;
 
-    const move1Arr = move1.split(' ').filter(x => x);
+    const move1Arr = move1.split(' ').filter(x => x).filter(x => !rotateNotaions.includes(x));
     const move1Ln = move1Arr.length;
 
-    const move2Arr = move2.split(' ').filter(x => x);
+    const move2Arr = move2.split(' ').filter(x => x).filter(x => !rotateNotaions.includes(x));
     const move2Ln = move2Arr.length;
 
     const overlapped = getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
