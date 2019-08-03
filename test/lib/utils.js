@@ -43,6 +43,15 @@ describe('utils.js', () => {
             const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
             assert.deepStrictEqual(actual, expected);
         });
+
+        it('正常系: 持ち換えあり', () => {
+            const setupArr = [ 'x', ];
+            const move1Arr = [ 'U', ];
+            const move2Arr = [ 'R', 'D', 'R\'', ];
+            const expected = 0;
+            const actual = utils.getNumberOfOverlappedMoves(setupArr, move1Arr, move2Arr);
+            assert.deepStrictEqual(actual, expected);
+        });
     });
 
     describe('getNumberOfMoves', () => {
@@ -75,6 +84,24 @@ describe('utils.js', () => {
 
         it('正常系: setupのみ', () => {
             const setup = 'D Rw2 U R U\' Rw2 D R\' D2';
+            const move1 = '';
+            const move2 = '';
+            const expected = 9;
+            const actual = utils.getNumberOfMoves(setup, move1, move2);
+            assert.deepStrictEqual(actual, expected);
+        });
+
+        it('正常系: setupとmove2で重複、持ち換えあり', () => {
+            const setup = 'x R';
+            const move1 = 'U';
+            const move2 = 'R D R\'';
+            const expected = 9;
+            const actual = utils.getNumberOfMoves(setup, move1, move2);
+            assert.deepStrictEqual(actual, expected);
+        });
+
+        it('正常系: setupのみ、持ち換えあり', () => {
+            const setup = 'z D Rw2 U R U\' Rw2 D R\' D2 z\'';
             const move1 = '';
             const move2 = '';
             const expected = 9;
