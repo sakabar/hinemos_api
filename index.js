@@ -988,6 +988,7 @@ sequelize.sync().then(() => {
     app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/:part/:userName`, (req, res, next) => {
         const userName = req.params.userName;
         const part = req.params.part;
+        const buffer = req.query.buffer;
 
         if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
@@ -1006,10 +1007,13 @@ sequelize.sync().then(() => {
             return;
         }
 
-        const query = {
+        let query = {
             where: {
                 userName,
             },
+        };
+        if (typeof buffer !== 'undefined') {
+            query.where.buffer = buffer;
         };
 
         let threeStyleQuizListModel;
@@ -1967,14 +1971,16 @@ sequelize.sync().then(() => {
             });
     });
 
-    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/:part`, (req, res, next) => {
+    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizList/:part/:buffer`, (req, res, next) => {
         const userName = req.decoded.userName;
         const part = req.params.part;
+        const buffer = req.params.buffer;
         const threeStyleQuizList = req.body.threeStyleQuizList ? req.body.threeStyleQuizList : [];
+
         // 形式は [{userName, buffer, sticker1, sticker2, stickers}]
         // userNameはデコードしたuserNameで置き換える
 
-        if (!userName || !threeStyleQuizList || !(part === 'corner' || part === 'edgeMiddle')) {
+        if (!userName || !threeStyleQuizList || !buffer || !(part === 'corner' || part === 'edgeMiddle')) {
             logger.emit('api.request', {
                 requestType: 'POST',
                 endpoint: '/hinemos/threeStyleQuizList/',
@@ -2005,6 +2011,7 @@ sequelize.sync().then(() => {
                     .destroy({
                         where: {
                             userName,
+                            buffer,
                         },
                         transaction: t,
                     })
