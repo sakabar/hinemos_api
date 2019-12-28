@@ -186,8 +186,6 @@ const sequelize = new Sequelize(
             idle: 10000,
         },
 
-        // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
-        operatorsAliases: false,
         timezone: '+09:00',
     }
 );
