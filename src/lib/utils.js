@@ -1,3 +1,19 @@
+const badRequestError = {
+    error: {
+        message: 'Bad Request',
+        code: 400,
+    },
+};
+
+const getBadRequestError = (errorMsg) => {
+    return {
+        error: {
+            message: `Bad Request: ${errorMsg}`,
+            code: 400,
+        },
+    };
+};
+
 // "Lw'2 => Lw"
 const getMoveType = (moveStr) => {
     if (!moveStr) {
@@ -56,6 +72,8 @@ const getNumberOfMoves = (setup, move1, move2) => {
     return numberOfMoves;
 };
 
+exports.badRequestError = badRequestError;
+exports.getBadRequestError = getBadRequestError;
 exports.getMoveType = getMoveType;
 exports.getNumberOfOverlappedMoves = getNumberOfOverlappedMoves;
 exports.getNumberOfMoves = getNumberOfMoves;

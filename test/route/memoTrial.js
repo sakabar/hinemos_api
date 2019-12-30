@@ -1,0 +1,106 @@
+const assert = require('assert');
+const memoTrial = require('../../src/route/memoTrial');
+const { sequelize, } = require('../../src/model');
+const path = require('path');
+const sinon = require('sinon');
+
+const MemoTrial = sequelize.import(path.join(__dirname, '../../src/model/memoTrial'));
+const MemoTrialDeck = sequelize.import(path.join(__dirname, '../../src/model/memoTrialDeck'));
+
+process.on('unhandledRejection', console.dir);
+
+describe('route/memoTrial.js', () => {
+    describe('postProcess()', () => {
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('正常系', () => {
+            const userName = 'taro';
+            const mode = 'transformation';
+
+            const req = {
+                body: {
+                    userName,
+                    mode,
+                    deckIds: [ '1', '2', ],
+                },
+            };
+
+            const expectedJson = {
+                success: {
+                    code: 200,
+                    result: {
+                        trialId: 99,
+                        trialDeckIds: [ 101, 102, ],
+                    },
+                },
+            };
+
+            const expectedStatus = 200;
+
+            // 中でres.jsonやres.statusが呼ばれる
+            // 本来はそのresをexpressが使うが、今回はアサートする関数を渡すことでチェックしている
+            const res = {
+                json: (ansJson) => {
+                    assert.deepStrictEqual(ansJson, expectedJson);
+                },
+                status: (status) => {
+                    assert.deepStrictEqual(status, expectedStatus);
+                },
+            };
+
+            const memoTrialCreateStub = sinon.stub(MemoTrial, 'create');
+            memoTrialCreateStub.withArgs(
+                {
+                    userName,
+                    mode,
+                }).returns(Promise.resolve({ trialId: 99, userName, mode, }));
+            memoTrialCreateStub.throws(new Error('unexpected argument'));
+
+            const memoTrialDeckBulkCreateStub = sinon.stub(MemoTrialDeck, 'bulkCreate');
+            memoTrialDeckBulkCreateStub.withArgs(
+                [
+                    {
+                        trialId: 99,
+                        ind: 0,
+                        deckId: 1,
+                    },
+                    {
+                        trialId: 99,
+                        ind: 1,
+                        deckId: 2,
+                    },
+                ]).returns(new Promise((resolve) => resolve([])));
+            memoTrialDeckBulkCreateStub.throws(new Error('unexpected arg'));
+
+            const memoTrialDeckFindallStub = sinon.stub(MemoTrialDeck, 'findAll');
+            memoTrialDeckFindallStub.withArgs({
+                attributes: [
+                    [ 'trial_deck_id', 'trialDeckId', ],
+                ],
+                where: {
+                    trialId: 99,
+                },
+                order: [
+                    [ 'ind', 'DESC', ],
+                ],
+            }).returns(
+                Promise.resolve([
+                    { trialDeckId: 101, },
+                    { trialDeckId: 102, },
+                ])
+            );
+            memoTrialDeckFindallStub.returns(Promise.resolve([]));
+
+            // 呼ばれないはずなのでassert.fail()
+            const next = () => {
+                assert.fail('next() was called.');
+            };
+
+            // returnすることで、mochaがPromiseを実際に解決してくれて、
+            // 内部のアサートが機能する
+            return memoTrial.postProcess(req, res, next);
+        });
+    });
+});

@@ -10,8 +10,13 @@ const logger = require('fluent-logger');
 const math = require('mathjs');
 const moment = require('moment');
 const path = require('path');
-const utils = require('./src/lib/utils');
 const Sequelize = require('sequelize');
+const route = require('./src/route');
+const validation = require('./src/validation');
+const utils = require('./src/lib/utils');
+const { badRequestError, } = require('./src/lib/utils');
+const { sequelize, } = require('./src/model');
+
 const Op = Sequelize.Op;
 
 // Fluentd
@@ -171,25 +176,6 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
     return ans.sort((a, b) => (a.solved - b.solved) || -(a.tried - b.tried) || -(a['avg_sec'] - b['avg_sec']));
 };
 
-const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASS,
-    {
-        host: process.env.DB_HOST,
-        dialect: 'mysql',
-
-        pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000,
-        },
-
-        timezone: '+09:00',
-    }
-);
-
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
 const FaceColor = sequelize.import(path.join(__dirname, '/src/model/faceColor'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
@@ -202,6 +188,11 @@ const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/mode
 const ThreeStyleQuizLogEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogEdgeMiddle'));
 const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
 const ThreeStyleQuizListEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListEdgeMiddle'));
+
+// const MemoTrial = sequelize.import(path.join(__dirname, '/src/model/memoTrial'));
+
+// const MemoElement = sequelize.import(path.join(__dirname, '/src/model/memoElement'));
+// const MemoEvent = sequelize.import(path.join(__dirname, '/src/model/memoEvent'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -233,12 +224,14 @@ sequelize.sync().then(() => {
         next();
     });
 
-    const badRequestError = {
-        error: {
-            message: 'Bad Request',
-            code: 400,
-        },
-    };
+    app.get(`${process.env.EXPRESS_ROOT}/memoElement`, validation.memoElement.getProcess, route.memoElement.getProcess);
+    // app.post(`${process.env.EXPRESS_ROOT}/memoElement`, validation.memoElement.postProcess, route.memoElement.postProcess);
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.postProcess, route.memoTrial.postProcess);
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.getProcess, route.memoDeck.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.postProcess, route.memoDeck.postProcess);
 
     app.post(process.env.EXPRESS_ROOT + '/users', (req, res, next) => {
         const userName = req.body.userName;
