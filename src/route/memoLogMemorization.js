@@ -3,8 +3,6 @@ const path = require('path');
 const { getBadRequestError, } = require('../lib/utils');
 const { validationResult, } = require('express-validator');
 
-// const MemoTrial = sequelize.import(path.join(__dirname, '../../src/model/memoTrial'));
-// const MemoTrialDeck = sequelize.import(path.join(__dirname, '../../src/model/memoTrialDeck'));
 const MemoDeckElement = sequelize.import(path.join(__dirname, '../../src/model/memoDeckElement'));
 const MemoLogMemorization = sequelize.import(path.join(__dirname, '../../src/model/memoLogMemorization'));
 
@@ -29,51 +27,61 @@ async function postProcess (req, res, next) {
         return res.status(400).json(getBadRequestError(errors.array()[0].msg));
     }
 
-    const trialDeckId = parseInt(req.body.trialDeckId);
-    const userName = req.body.userName;
-    const ind = parseInt(req.body.ind);
-    const deckInd = parseInt(req.body.deckInd);
-    const pairInd = parseInt(req.body.pairInd);
-    const posInd = parseInt(req.body.posInd);
-    const deckElementId = parseInt(req.body.deckElementId);
-    const memoSec = parseFloat(req.body.memoSec);
-
     const t = await sequelize.transaction().catch(next);
 
     try {
+        const logs = req.body.logs.map(log => {
+            return {
+                trialDeckId: parseInt(log.trialDeckId),
+                userName: log.userName,
+                ind: parseInt(log.ind),
+                deckInd: parseInt(log.deckInd),
+                pairInd: parseInt(log.pairInd),
+                posInd: parseInt(log.posInd),
+                deckElementId: parseInt(log.deckElementId),
+                memoSec: parseFloat(log.memoSec),
+            };
+        });
+
         const deckElements = await MemoDeckElement.findAll(
             {
                 attributes: [
+                    [ 'deck_element_id', 'deckElementId', ],
                     [ 'element_id', 'elementId', ],
                 ],
                 where: {
-                    deckElementId,
+                    deckElementId: logs.map(log => log.deckElementId),
                 },
                 transaction: t,
             }
         );
 
-        const elementId = deckElements[0].elementId;
+        const deckElementIdToElementId = {};
+        deckElements.map(deckElement => {
+            const deckElementId = deckElement.deckElementId;
+            const elementId = deckElement.elementId;
+            deckElementIdToElementId[deckElementId] = elementId;
+        });
 
-        const instance = {
-            trialDeckId,
-            userName,
-            ind,
-            deckInd,
-            pairInd,
-            posInd,
-            deckElementId,
-            elementId,
-            memoSec,
-        };
+        const bulk = logs.map(log => {
+            const instance = {
+                ...log,
+                elementId: deckElementIdToElementId[log.deckElementId],
+            };
+            return instance;
+        });
 
-        console.dir(JSON.stringify(instance));
-        const result = await MemoLogMemorization.create(instance, { transaction: t, });
+        // console.dir(JSON.stringify(bulk));
+        await MemoLogMemorization.bulkCreate(bulk, { transaction: t, });
 
+        // Auto Incrementのパラメータは返さない
+        // (postしたログだけ取ってくるクエリが思い浮かばない)
         const ans = {
             success: {
                 code: 200,
-                result,
+                result: {
+                    logs: bulk,
+                },
             },
         };
 

@@ -4,8 +4,6 @@ const { sequelize, } = require('../../src/model');
 const path = require('path');
 const sinon = require('sinon');
 
-// const MemoTrial = sequelize.import(path.join(__dirname, '../../src/model/memoTrial'));
-// const MemoTrialDeck = sequelize.import(path.join(__dirname, '../../src/model/memoTrialDeck'));
 const MemoDeckElement = sequelize.import(path.join(__dirname, '../../src/model/memoDeckElement'));
 const MemoLogMemorization = sequelize.import(path.join(__dirname, '../../src/model/memoLogMemorization'));
 
@@ -20,19 +18,32 @@ describe('route/memoLogMemorization.js', () => {
         it('正常系', () => {
             const req = {
                 body: {
-                    trialDeckId: '1',
-                    userName: 'taro',
-                    ind: '2',
-                    deckInd: '3',
-                    pairInd: '4',
-                    posInd: '5',
-                    deckElementId: '6',
-                    memoSec: '7.0',
+                    logs: [
+                        {
+                            trialDeckId: '1',
+                            userName: 'taro',
+                            ind: '2',
+                            deckInd: '3',
+                            pairInd: '4',
+                            posInd: '5',
+                            deckElementId: '6',
+                            memoSec: '7.0',
+                        },
+                        {
+                            trialDeckId: '11',
+                            userName: 'taro',
+                            ind: '12',
+                            deckInd: '13',
+                            pairInd: '14',
+                            posInd: '15',
+                            deckElementId: '16',
+                            memoSec: '17.0',
+                        },
+                    ],
                 },
             };
 
-            const expectedInstance = {
-                memorizationLogId: 8,
+            const expectedInstance1 = {
                 trialDeckId: 1,
                 userName: 'taro',
                 ind: 2,
@@ -40,13 +51,31 @@ describe('route/memoLogMemorization.js', () => {
                 pairInd: 4,
                 posInd: 5,
                 deckElementId: 6,
-                elementId: 9,
                 memoSec: 7.0,
+                elementId: 8,
             };
+
+            const expectedInstance2 = {
+                trialDeckId: 11,
+                userName: 'taro',
+                ind: 12,
+                deckInd: 13,
+                pairInd: 14,
+                posInd: 15,
+                deckElementId: 16,
+                memoSec: 17.0,
+                elementId: 18,
+            };
+
             const expectedJson = {
                 success: {
                     code: 200,
-                    result: expectedInstance,
+                    result: {
+                        logs: [
+                            expectedInstance1,
+                            expectedInstance2,
+                        ],
+                    },
                 },
             };
 
@@ -75,18 +104,22 @@ describe('route/memoLogMemorization.js', () => {
             deckElementFindAllStub.withArgs(
                 {
                     attributes: [
+                        [ 'deck_element_id', 'deckElementId', ],
                         [ 'element_id', 'elementId', ],
                     ],
                     where: {
-                        deckElementId: 6,
+                        deckElementId: [ 6, 16, ],
                     },
                     transaction: t,
                 }
-            ).returns(Promise.resolve([ { elementId: 9, }, ]));
+            ).returns(Promise.resolve([
+                { deckElementId: 6, elementId: 8, },
+                { deckElementId: 16, elementId: 18, },
+            ]));
             deckElementFindAllStub.throws(new Error('unexpected argument for findAll()'));
 
-            const memoLogMemorizationCreateStub = sinon.stub(MemoLogMemorization, 'create');
-            memoLogMemorizationCreateStub.withArgs(
+            const memoLogMemorizationBulkCreateStub = sinon.stub(MemoLogMemorization, 'bulkCreate');
+            memoLogMemorizationBulkCreateStub.withArgs([
                 {
                     trialDeckId: 1,
                     userName: 'taro',
@@ -95,10 +128,22 @@ describe('route/memoLogMemorization.js', () => {
                     pairInd: 4,
                     posInd: 5,
                     deckElementId: 6,
-                    elementId: 9,
                     memoSec: 7.0,
-                }, { transaction: t, }).returns(Promise.resolve(expectedInstance));
-            memoLogMemorizationCreateStub.throws(new Error('unexpected argument for create()'));
+                    elementId: 8,
+                },
+                {
+                    trialDeckId: 11,
+                    userName: 'taro',
+                    ind: 12,
+                    deckInd: 13,
+                    pairInd: 14,
+                    posInd: 15,
+                    deckElementId: 16,
+                    memoSec: 17.0,
+                    elementId: 18,
+                },
+            ], { transaction: t, }).returns(Promise.resolve([]));
+            memoLogMemorizationBulkCreateStub.throws(new Error('unexpected argument for bulkCreate()'));
 
             // 呼ばれないはずなのでassert.fail()
             const next = (err) => {
