@@ -33,53 +33,63 @@ async function postProcess (req, res, next) {
         return parseInt(deckId);
     });
 
-    const trial = await MemoTrial.create(
-        {
-            userName,
-            mode,
-        }).catch(next);
+    const t = await sequelize.transaction().catch(next);
 
-    const trialId = trial.trialId;
+    try {
+        const trial = await MemoTrial.create(
+            {
+                userName,
+                mode,
+            }, { transaction: t, });
 
-    const trialDeckBulk = [];
-    deckIds.map((deckId, deckInd) => {
-        const instance = {
-            trialId,
-            ind: deckInd,
-            deckId,
-        };
-        trialDeckBulk.push(instance);
-    });
+        const trialId = trial.trialId;
 
-    await MemoTrialDeck.bulkCreate(trialDeckBulk).catch(next);
-
-    // incremental IDはbulkCreateでは返って来ないのでfindAllする
-    const trialDecks = await MemoTrialDeck.findAll({
-        attributes: [
-            [ 'trial_deck_id', 'trialDeckId', ],
-        ],
-        where: {
-            trialId,
-        },
-        order: [
-            [ 'ind', 'DESC', ],
-        ],
-    }).catch(next);
-
-    const trialDeckIds = trialDecks.map(trialDeck => trialDeck.trialDeckId);
-
-    const ans = {
-        success: {
-            code: 200,
-            result: {
+        const trialDeckBulk = [];
+        deckIds.map((deckId, deckInd) => {
+            const instance = {
                 trialId,
-                trialDeckIds,
-            },
-        },
-    };
+                ind: deckInd,
+                deckId,
+            };
+            trialDeckBulk.push(instance);
+        });
 
-    res.json(ans);
-    res.status(200);
+        await MemoTrialDeck.bulkCreate(trialDeckBulk, { transaction: t, });
+
+        // incremental IDはbulkCreateでは返って来ないのでfindAllする
+        const trialDecks = await MemoTrialDeck.findAll({
+            attributes: [
+                [ 'trial_deck_id', 'trialDeckId', ],
+            ],
+            where: {
+                trialId,
+            },
+            order: [
+                [ 'ind', 'DESC', ],
+            ],
+            transaction: t,
+        });
+
+        const trialDeckIds = trialDecks.map(trialDeck => trialDeck.trialDeckId);
+
+        const ans = {
+            success: {
+                code: 200,
+                result: {
+                    trialId,
+                    trialDeckIds,
+                },
+            },
+        };
+
+        await t.commit();
+        res.json(ans);
+        res.status(200);
+        return;
+    } catch (err) {
+        await t.rollback();
+        next(err);
+    }
 };
 
 exports.getProcess = getProcess;

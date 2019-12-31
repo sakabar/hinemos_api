@@ -50,12 +50,20 @@ describe('route/memoTrial.js', () => {
                 },
             };
 
+            const transactionStub = sinon.stub(sequelize, 'transaction');
+            // transaction
+            const t = {
+                commit: () => {},
+                rollback: () => {},
+            };
+            transactionStub.returns(Promise.resolve(t));
+
             const memoTrialCreateStub = sinon.stub(MemoTrial, 'create');
             memoTrialCreateStub.withArgs(
                 {
                     userName,
                     mode,
-                }).returns(Promise.resolve({ trialId: 99, userName, mode, }));
+                }, { transaction: t, }).returns(Promise.resolve({ trialId: 99, userName, mode, }));
             memoTrialCreateStub.throws(new Error('unexpected argument'));
 
             const memoTrialDeckBulkCreateStub = sinon.stub(MemoTrialDeck, 'bulkCreate');
@@ -71,7 +79,7 @@ describe('route/memoTrial.js', () => {
                         ind: 1,
                         deckId: 2,
                     },
-                ]).returns(new Promise((resolve) => resolve([])));
+                ], { transaction: t, }).returns(new Promise((resolve) => resolve([])));
             memoTrialDeckBulkCreateStub.throws(new Error('unexpected arg'));
 
             const memoTrialDeckFindallStub = sinon.stub(MemoTrialDeck, 'findAll');
@@ -85,6 +93,7 @@ describe('route/memoTrial.js', () => {
                 order: [
                     [ 'ind', 'DESC', ],
                 ],
+                transaction: t,
             }).returns(
                 Promise.resolve([
                     { trialDeckId: 101, },

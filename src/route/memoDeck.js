@@ -33,67 +33,77 @@ async function postProcess (req, res, next) {
         return res.status(400).json(getBadRequestError(errors.array()[0].msg));
     }
 
-    const elementIdsList = req.body.elementIdsList.map(elementIds => {
-        return elementIds.map(elementId => {
-            return parseInt(elementId);
+    const t = await sequelize.transaction().catch(next);
+
+    try {
+        const elementIdsList = req.body.elementIdsList.map(elementIds => {
+            return elementIds.map(elementId => {
+                return parseInt(elementId);
+            });
         });
-    });
-    const memoDecks = await Promise.all(elementIdsList.map(elementIds => MemoDeck.create())).catch(next);
-    const deckIds = memoDecks.map(memoDeck => memoDeck.deckId);
+        const memoDecks = await Promise.all(elementIdsList.map(elementIds => MemoDeck.create({}, { transaction: t, })));
+        const deckIds = memoDecks.map(memoDeck => memoDeck.deckId);
 
-    // deckIdの小さい順にしておく
-    deckIds.sort();
+        // deckIdの小さい順にしておく
+        deckIds.sort();
 
-    const deckElementBulk = [];
-    elementIdsList.map((elementIds, deckInd) => {
-        const deckId = deckIds[deckInd];
-        return elementIds.map((elementId, ind) => {
-            const instance = {
-                deckId,
-                ind,
-                elementId,
-            };
-            deckElementBulk.push(instance);
-        });
-    });
-    await MemoDeckElement.bulkCreate(deckElementBulk).catch(next);
-
-    // incremental IDはbulkCreateでは返って来ないので、DeckIdごとにfindAllする
-    const deckElementIdsDict = {};
-    const deckElementsList = await Promise.all(deckIds.map(deckId => {
-        return MemoDeckElement.findAll(
-            {
-                attributes: [
-                    [ 'deck_element_id', 'deckElementId', ],
-                ],
-                where: {
+        const deckElementBulk = [];
+        elementIdsList.map((elementIds, deckInd) => {
+            const deckId = deckIds[deckInd];
+            return elementIds.map((elementId, ind) => {
+                const instance = {
                     deckId,
+                    ind,
+                    elementId,
+                };
+                deckElementBulk.push(instance);
+            });
+        });
+
+        await MemoDeckElement.bulkCreate(deckElementBulk, { transaction: t, });
+
+        // incremental IDはbulkCreateでは返って来ないので、DeckIdごとにfindAllする
+        const deckElementIdsDict = {};
+        const deckElementsList = await Promise.all(deckIds.map(deckId => {
+            return MemoDeckElement.findAll(
+                {
+                    attributes: [
+                        [ 'deck_element_id', 'deckElementId', ],
+                    ],
+                    where: {
+                        deckId,
+                    },
+                    order: [
+                        [ 'ind', 'DESC', ],
+                    ],
+                    transaction: t,
+                });
+        }));
+
+        _.zip(deckIds, deckElementsList).map(pair => {
+            const deckId = pair[0];
+            const deckElements = pair[1];
+            deckElementIdsDict[deckId] = deckElements.map(de => de.deckElementId);
+        });
+
+        const ans = {
+            success: {
+                code: 200,
+                result: {
+                    deckIds,
+                    deckElementIdsDict,
                 },
-                order: [
-                    [ 'ind', 'DESC', ],
-                ],
-            }
-        );
-    })).catch(next);
-
-    _.zip(deckIds, deckElementsList).map(pair => {
-        const deckId = pair[0];
-        const deckElements = pair[1];
-        deckElementIdsDict[deckId] = deckElements.map(de => de.deckElementId);
-    });
-
-    const ans = {
-        success: {
-            code: 200,
-            result: {
-                deckIds,
-                deckElementIdsDict,
             },
-        },
-    };
+        };
 
-    res.json(ans);
-    res.status(200);
+        await t.commit();
+        res.json(ans);
+        res.status(200);
+        return;
+    } catch (err) {
+        await t.rollback();
+        next(err);
+    }
 };
 
 exports.getProcess = getProcess;

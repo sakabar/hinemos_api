@@ -51,6 +51,14 @@ describe('route/memoDeck.js', () => {
                 },
             };
 
+            const transactionStub = sinon.stub(sequelize, 'transaction');
+            // transaction
+            const t = {
+                commit: () => {},
+                rollback: () => {},
+            };
+            transactionStub.returns(Promise.resolve(t));
+
             const memoDeckCreateStub = sinon.stub(MemoDeck, 'create');
             memoDeckCreateStub.onFirstCall()
                 .returns(Promise.resolve({ deckId: 100, }));
@@ -76,7 +84,7 @@ describe('route/memoDeck.js', () => {
                         ind: 1,
                         elementId: 3,
                     },
-                ]).returns(new Promise((resolve) => resolve([])));
+                ], { transaction: t, }).returns(new Promise((resolve) => resolve([])));
             memoDeckElementBulkCreateStub.throws(new Error('unexpected argument'));
 
             const memoDeckElementFindallStub = sinon.stub(MemoDeckElement, 'findAll');
@@ -91,6 +99,7 @@ describe('route/memoDeck.js', () => {
                 order: [
                     [ 'ind', 'DESC', ],
                 ],
+                transaction: t,
             }).returns(
                 Promise.resolve([
                     { deckElementId: 10, },
@@ -107,6 +116,7 @@ describe('route/memoDeck.js', () => {
                 order: [
                     [ 'ind', 'DESC', ],
                 ],
+                transaction: t,
             }).returns(
                 Promise.resolve([
                     { deckElementId: 101, },
