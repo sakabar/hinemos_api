@@ -3,6 +3,50 @@ const assert = require('assert');
 const { validationResult, } = require('express-validator');
 
 describe('validation/memoScore.js', () => {
+    describe('getProcess()', () => {
+        it('正常系', async () => {
+            const req = {
+                query: {
+                    userName: 'taro',
+                },
+            };
+
+            for (const fn of memoScoreValidation.getProcess) {
+                await fn(req, {}, () => {});
+            }
+            const errors = validationResult(req);
+            assert.deepStrictEqual(true, errors.isEmpty());
+        });
+
+        it('異常系: userNameがない', async () => {
+            const req = {
+                query: {
+                    // userName: 'taro',
+                },
+            };
+
+            for (const fn of memoScoreValidation.getProcess) {
+                await fn(req, {}, () => {});
+            }
+            const errors = validationResult(req);
+            assert.deepStrictEqual(false, errors.isEmpty());
+        });
+
+        it('異常系: userNameが空文字列', async () => {
+            const req = {
+                query: {
+                    userName: '',
+                },
+            };
+
+            for (const fn of memoScoreValidation.getProcess) {
+                await fn(req, {}, () => {});
+            }
+            const errors = validationResult(req);
+            assert.deepStrictEqual(false, errors.isEmpty());
+        });
+    });
+
     describe('postProcess()', () => {
         it('正常系:全てのパラメータあり', async () => {
             const req = {

@@ -2330,7 +2330,7 @@ sequelize.sync().then(() => {
     // app.get(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.getProcess, route.memoLogMemorization.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.postProcess, route.memoLogMemorization.postProcess);
 
-    // app.get(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
+    app.get(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.postProcess, route.memoScore.postProcess);
 
     // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);

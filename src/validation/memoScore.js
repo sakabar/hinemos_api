@@ -1,6 +1,11 @@
-const { body, } = require('express-validator');
+const { body, query, } = require('express-validator');
 
 const getProcess = [
+    query('userName')
+        .exists({ checkNull: true, })
+        .notEmpty()
+        .isString()
+        .withMessage('userName param is invalid for memoScore.postProcess'),
 ];
 
 const postProcess = [
