@@ -74,7 +74,7 @@ async function postProcess (req, res, next) {
                         deckId,
                     },
                     order: [
-                        [ 'ind', 'DESC', ],
+                        [ 'ind', 'ASC', ],
                     ],
                     transaction: t,
                 });

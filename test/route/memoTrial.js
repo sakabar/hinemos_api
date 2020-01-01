@@ -94,7 +94,7 @@ describe('route/memoTrial.js', () => {
                     trialId: 99,
                 },
                 order: [
-                    [ 'ind', 'DESC', ],
+                    [ 'ind', 'ASC', ],
                 ],
                 transaction: t,
             }).returns(

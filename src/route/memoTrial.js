@@ -71,7 +71,7 @@ async function postProcess (req, res, next) {
                 trialId,
             },
             order: [
-                [ 'ind', 'DESC', ],
+                [ 'ind', 'ASC', ],
             ],
             transaction: t,
         });

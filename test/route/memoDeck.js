@@ -97,7 +97,7 @@ describe('route/memoDeck.js', () => {
                     deckId: 100,
                 },
                 order: [
-                    [ 'ind', 'DESC', ],
+                    [ 'ind', 'ASC', ],
                 ],
                 transaction: t,
             }).returns(
@@ -114,7 +114,7 @@ describe('route/memoDeck.js', () => {
                     deckId: 101,
                 },
                 order: [
-                    [ 'ind', 'DESC', ],
+                    [ 'ind', 'ASC', ],
                 ],
                 transaction: t,
             }).returns(
