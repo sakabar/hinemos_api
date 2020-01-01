@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = (sequelize, DataTypes) => {
     const db = sequelize.define('memo_score', {
         memoScoreId: {
@@ -75,6 +77,12 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'memo_score',
         charset: 'utf8',
         collate: 'utf8_unicode_ci',
+    });
+
+    const MemoTrial = sequelize.import(path.join(__dirname, '/memoTrial'));
+    db.belongsTo(MemoTrial, {
+        foreignKey: 'trialId',
+        targetKey: 'trialId',
     });
 
     return db;
