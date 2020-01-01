@@ -27,6 +27,14 @@ async function postProcess (req, res, next) {
         return res.status(400).json(getBadRequestError(errors.array()[0].msg));
     }
 
+    const decodedUserName = req.decoded.userName;
+    // 異なるユーザの情報をPOSTしようとしていないことを確認
+    const invalidLogs = req.body.logs.filter(log => log.userName !== decodedUserName);
+    if (invalidLogs.length > 0) {
+        const msg = `invalid user name: ${invalidLogs[0].userName} != ${decodedUserName}`;
+        return res.status(400).json(getBadRequestError(msg));
+    }
+
     const t = await sequelize.transaction().catch(next);
 
     try {

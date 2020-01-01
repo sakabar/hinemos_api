@@ -5,7 +5,7 @@ const badRequestError = {
     },
 };
 
-const getBadRequestError = (errorMsg) => {
+const getBadRequestError = (errorMsg = '') => {
     return {
         error: {
             message: `Bad Request: ${errorMsg}`,

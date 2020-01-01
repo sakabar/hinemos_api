@@ -189,11 +189,6 @@ const ThreeStyleQuizLogEdgeMiddle = sequelize.import(path.join(__dirname, '/src/
 const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
 const ThreeStyleQuizListEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListEdgeMiddle'));
 
-// const MemoTrial = sequelize.import(path.join(__dirname, '/src/model/memoTrial'));
-
-// const MemoElement = sequelize.import(path.join(__dirname, '/src/model/memoElement'));
-// const MemoEvent = sequelize.import(path.join(__dirname, '/src/model/memoEvent'));
-
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
     sha512.update(userName + password, 'ascii');
@@ -224,23 +219,12 @@ sequelize.sync().then(() => {
         next();
     });
 
-    // app.get(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.getProcess, route.memoDeck.getProcess);
-    app.post(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.postProcess, route.memoDeck.postProcess);
-
     app.get(`${process.env.EXPRESS_ROOT}/memoElement`, validation.memoElement.getProcess, route.memoElement.getProcess);
+    // これは用意しない
     // app.post(`${process.env.EXPRESS_ROOT}/memoElement`, validation.memoElement.postProcess, route.memoElement.postProcess);
-
-    // app.get(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.getProcess, route.memoLogMemorization.getProcess);
-    app.post(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.postProcess, route.memoLogMemorization.postProcess);
 
     // app.get(`${process.env.EXPRESS_ROOT}/memoLogRecall`, validation.memoLogRecall.getProcess, route.memoLogRecall.getProcess);
     // app.post(`${process.env.EXPRESS_ROOT}/memoLogRecall`, validation.memoLogRecall.postProcess, route.memoLogRecall.postProcess);
-
-    // app.get(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
-    app.post(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.postProcess, route.memoScore.postProcess);
-
-    // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);
-    app.post(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.postProcess, route.memoTrial.postProcess);
 
     app.post(process.env.EXPRESS_ROOT + '/users', (req, res, next) => {
         const userName = req.body.userName;
@@ -2339,6 +2323,18 @@ sequelize.sync().then(() => {
                     });
             });
     });
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.getProcess, route.memoDeck.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.postProcess, route.memoDeck.postProcess);
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.getProcess, route.memoLogMemorization.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.postProcess, route.memoLogMemorization.postProcess);
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.postProcess, route.memoScore.postProcess);
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.postProcess, route.memoTrial.postProcess);
 
     server.listen(process.env.EXPRESS_PORT);
 });

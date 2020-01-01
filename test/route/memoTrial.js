@@ -20,6 +20,9 @@ describe('route/memoTrial.js', () => {
             const mode = 'transformation';
 
             const req = {
+                decoded: {
+                    userName,
+                },
                 body: {
                     userName,
                     mode,
@@ -105,6 +108,57 @@ describe('route/memoTrial.js', () => {
             // 呼ばれないはずなのでassert.fail()
             const next = () => {
                 assert.fail('next() was called.');
+            };
+
+            // returnすることで、mochaがPromiseを実際に解決してくれて、
+            // 内部のアサートが機能する
+            return memoTrial.postProcess(req, res, next);
+        });
+
+        it('異常系: 自分以外のユーザのデータを追加しようとするとエラー', () => {
+            const userName = 'taro';
+            const mode = 'transformation';
+
+            const req = {
+                decoded: {
+                    userName,
+                },
+                body: {
+                    userName: 'saburo',
+                    mode,
+                    deckIds: [ '1', '2', ],
+                },
+            };
+
+            const expectedJson = {
+                error: {
+                    message: 'Bad Request: invalid user name: saburo != taro',
+                    code: 400,
+                },
+            };
+
+            const expectedStatus = 400;
+
+            // 中でres.jsonやres.statusが呼ばれる
+            // 本来はそのresをexpressが使うが、今回はアサートする関数を渡すことでチェックしている
+            const res = {
+                json: (ansJson) => {
+                    assert.deepStrictEqual(ansJson, expectedJson);
+                },
+                status: (status) => {
+                    assert.deepStrictEqual(status, expectedStatus);
+                    return {
+                        // res.status(400).json(ansJson) のような場合
+                        json: (ansJson) => {
+                            assert.deepStrictEqual(ansJson, expectedJson);
+                        },
+                    };
+                },
+            };
+
+            // 呼ばれないはずなのでassert.fail()
+            const next = (err) => {
+                assert.fail(`next() was called: ${err}`);
             };
 
             // returnすることで、mochaがPromiseを実際に解決してくれて、

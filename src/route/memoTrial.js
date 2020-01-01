@@ -33,6 +33,12 @@ async function postProcess (req, res, next) {
         return parseInt(deckId);
     });
 
+    const decodedUserName = req.decoded.userName;
+    if (userName !== decodedUserName) {
+        const msg = `invalid user name: ${userName} != ${decodedUserName}`;
+        return res.status(400).json(getBadRequestError(msg));
+    }
+
     const t = await sequelize.transaction().catch(next);
 
     try {
