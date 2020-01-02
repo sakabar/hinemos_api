@@ -2,8 +2,8 @@ const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
     const db = sequelize.define('memo_log_memorization', {
-        memorizationLogId: {
-            field: 'memorization_log_id',
+        memoLogId: {
+            field: 'memo_log_id',
             type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true,
