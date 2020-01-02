@@ -8,6 +8,7 @@ describe('validation/memoTrial.js', () => {
             const req = {
                 body: {
                     userName: 'taro',
+                    event: 'mbld',
                     mode: 'memorization',
                     deckIds: [ '1', '2', ],
                 },
@@ -24,6 +25,7 @@ describe('validation/memoTrial.js', () => {
             const req = {
                 body: {
                     // userName: 'taro',
+                    event: 'mbld',
                     mode: 'memorization',
                     deckIds: [ '1', '2', ],
                 },
@@ -40,6 +42,7 @@ describe('validation/memoTrial.js', () => {
             const req = {
                 body: {
                     userName: '',
+                    event: 'mbld',
                     mode: 'memorization',
                     deckIds: [ '1', '2', ],
                 },
@@ -52,11 +55,12 @@ describe('validation/memoTrial.js', () => {
             assert.deepStrictEqual(false, errors.isEmpty());
         });
 
-        it('異常系: modeが想定外の文字列', async () => {
+        it('異常系: modeが空', async () => {
             const req = {
                 body: {
                     userName: 'taro',
-                    mode: 'MOMOrization',
+                    event: 'mbld',
+                    // mode: 'memorization',
                     deckIds: [ '1', '2', ],
                 },
             };
@@ -72,6 +76,7 @@ describe('validation/memoTrial.js', () => {
             const req = {
                 body: {
                     userName: 'taro',
+                    event: 'mbld',
                     mode: 'memorization',
                 },
             };
@@ -87,6 +92,7 @@ describe('validation/memoTrial.js', () => {
             const req = {
                 body: {
                     userName: 'taro',
+                    event: 'mbld',
                     mode: 'memorization',
                     deckIds: [],
                 },

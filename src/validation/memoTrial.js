@@ -8,15 +8,17 @@ const postProcess = [
         .exists({ checkNull: true, })
         .isString()
         .notEmpty()
-        .withMessage('userName param is invalid for memoDeck.postProcess'),
+        .withMessage('userName param is invalid for memoTrial.postProcess'),
+    body('event')
+        .exists({ checkNull: true, })
+        .isString()
+        .notEmpty()
+        .withMessage('event param is invalid for memoTrial.postProcess'),
     body('mode')
         .exists({ checkNull: true, })
         .isString()
         .notEmpty()
-        .custom((value, { req, }) => {
-            return [ 'memorization', 'transformation', ].includes(req.body.mode);
-        })
-        .withMessage('mode param is invalid for memoDeck.postProcess'),
+        .withMessage('mode param is invalid for memoTrial.postProcess'),
     body('deckIds')
         .exists({ checkNull: true, })
         .isArray({ min: 1, }),

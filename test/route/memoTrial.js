@@ -17,6 +17,7 @@ describe('route/memoTrial.js', () => {
 
         it('正常系', () => {
             const userName = 'taro';
+            const event = 'mbld';
             const mode = 'transformation';
 
             const req = {
@@ -25,6 +26,7 @@ describe('route/memoTrial.js', () => {
                 },
                 body: {
                     userName,
+                    event,
                     mode,
                     deckIds: [ '1', '2', ],
                 },
@@ -65,8 +67,9 @@ describe('route/memoTrial.js', () => {
             memoTrialCreateStub.withArgs(
                 {
                     userName,
+                    event,
                     mode,
-                }, { transaction: t, }).returns(Promise.resolve({ trialId: 99, userName, mode, }));
+                }, { transaction: t, }).returns(Promise.resolve({ trialId: 99, userName, event, mode, }));
             memoTrialCreateStub.throws(new Error('unexpected argument'));
 
             const memoTrialDeckBulkCreateStub = sinon.stub(MemoTrialDeck, 'bulkCreate');
@@ -117,6 +120,7 @@ describe('route/memoTrial.js', () => {
 
         it('異常系: 自分以外のユーザのデータを追加しようとするとエラー', () => {
             const userName = 'taro';
+            const event = 'mbld';
             const mode = 'transformation';
 
             const req = {
@@ -125,6 +129,7 @@ describe('route/memoTrial.js', () => {
                 },
                 body: {
                     userName: 'saburo',
+                    event,
                     mode,
                     deckIds: [ '1', '2', ],
                 },

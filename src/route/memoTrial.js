@@ -33,6 +33,7 @@ async function postProcess (req, res, next) {
     }
 
     const userName = req.body.userName;
+    const event = req.body.event;
     const mode = req.body.mode;
     const deckIds = req.body.deckIds.map(deckId => {
         return parseInt(deckId);
@@ -50,6 +51,7 @@ async function postProcess (req, res, next) {
         const trial = await MemoTrial.create(
             {
                 userName,
+                event,
                 mode,
             }, { transaction: t, });
 

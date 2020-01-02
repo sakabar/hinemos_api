@@ -13,6 +13,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        event: {
+            field: 'event',
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         mode: {
             field: 'mode',
             type: DataTypes.STRING,
@@ -29,6 +34,18 @@ module.exports = (sequelize, DataTypes) => {
     db.belongsTo(User, {
         foreignKey: 'userName',
         targetKey: 'userName',
+    });
+
+    const MemoEvent = sequelize.import(path.join(__dirname, '/memoEvent'));
+    db.belongsTo(MemoEvent, {
+        foreignKey: 'event',
+        targetKey: 'event',
+    });
+
+    const MemoMode = sequelize.import(path.join(__dirname, '/memoMode'));
+    db.belongsTo(MemoMode, {
+        foreignKey: 'mode',
+        targetKey: 'mode',
     });
 
     return db;

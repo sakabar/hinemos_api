@@ -18,6 +18,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.FLOAT,
             allowNull: false,
         },
+        totalRecallSec: {
+            field: 'total_recall_sec',
+            type: DataTypes.FLOAT,
+            allowNull: true,
+        },
         // ここからDeck
         successDeckNum: {
             field: 'success_deck_num',
