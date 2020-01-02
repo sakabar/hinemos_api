@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         memoSec: {
             field: 'memo_sec',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: false,
         },
     }, {

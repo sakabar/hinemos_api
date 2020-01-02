@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         losingMemorySec: {
             field: 'losing_memory_sec',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: false,
         },
         isRecalled: {

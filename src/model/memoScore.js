@@ -15,12 +15,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         totalMemoSec: {
             field: 'total_memo_sec',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: false,
         },
         totalRecallSec: {
             field: 'total_recall_sec',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: true,
         },
         // ここからDeck
@@ -36,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         triedDeckAcc: {
             field: 'tried_deck_acc',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: true, //
         },
 
@@ -47,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         allDeckAcc: {
             field: 'all_deck_acc',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: true, //
         },
         // ここからElement
@@ -63,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         triedElementAcc: {
             field: 'tried_element_acc',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: true, //
         },
 
@@ -74,7 +74,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         allElementAcc: {
             field: 'all_element_acc',
-            type: DataTypes.FLOAT,
+            type: DataTypes.DOUBLE,
             allowNull: true, //
         },
     }, {
