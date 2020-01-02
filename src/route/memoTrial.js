@@ -7,6 +7,11 @@ const MemoTrial = sequelize.import(path.join(__dirname, '../../src/model/memoTri
 const MemoTrialDeck = sequelize.import(path.join(__dirname, '../../src/model/memoTrialDeck'));
 
 const getProcess = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(getBadRequestError(errors.array()[0].msg));
+    }
+
     const result = {
         process: 'get',
     };

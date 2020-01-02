@@ -8,6 +8,11 @@ const MemoScore = sequelize.import(path.join(__dirname, '../model/memoScore'));
 const MemoTrial = sequelize.import(path.join(__dirname, '../model/memoTrial'));
 
 async function getProcess (req, res, next) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(getBadRequestError(errors.array()[0].msg));
+    }
+
     const decodedUserName = req.decoded.userName;
     const userName = req.query.userName;
 

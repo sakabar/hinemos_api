@@ -27,6 +27,11 @@ async function getProcess (req, res, next) {
 };
 
 const postProcess = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(getBadRequestError(errors.array()[0].msg));
+    }
+
     const result = {
         process: 'post',
     };

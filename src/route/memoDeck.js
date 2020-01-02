@@ -10,6 +10,11 @@ const MemoDeckElement = sequelize.import(path.join(__dirname, '../model/memoDeck
 // process.on('unhandledRejection', console.dir);
 
 const getProcess = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(getBadRequestError(errors.array()[0].msg));
+    }
+
     const ans = {
         success: {
             code: 200,
