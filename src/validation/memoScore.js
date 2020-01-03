@@ -5,11 +5,11 @@ const getProcess = [
         .exists({ checkNull: true, })
         .notEmpty()
         .isString()
-        .withMessage('userName param is invalid for memoScore.postProcess'),
+        .withMessage('userName param is invalid for memoScore.getProcess'),
     // body('event')
-    //     .withMessage('event param is invalid for memoScore.postProcess'),
+    //     .withMessage('event param is invalid for memoScore.getProcess'),
     // body('mode')
-    //     .withMessage('mode param is invalid for memoScore.postProcess'),
+    //     .withMessage('mode param is invalid for memoScore.getProcess'),
 ];
 
 const postProcess = [

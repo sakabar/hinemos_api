@@ -46,7 +46,7 @@ async function getProcess (req, res, next) {
                 },
             ],
             order: [
-                [ 'trialId', 'ASC', ],
+                [ 'trialId', 'DESC', ],
             ],
             transaction: t,
         });

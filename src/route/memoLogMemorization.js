@@ -1,24 +1,74 @@
+const Sequelize = require('sequelize');
 const { sequelize, } = require('../model');
 const path = require('path');
 const { getBadRequestError, } = require('../lib/utils');
 const { validationResult, } = require('express-validator');
 
+const MemoElement = sequelize.import(path.join(__dirname, '../../src/model/memoElement'));
 const MemoDeckElement = sequelize.import(path.join(__dirname, '../../src/model/memoDeckElement'));
 const MemoLogMemorization = sequelize.import(path.join(__dirname, '../../src/model/memoLogMemorization'));
+const MemoTrialDeck = sequelize.import(path.join(__dirname, '../../src/model/memoTrialDeck'));
 
-const getProcess = (req, res, next) => {
-    const result = {
-        process: 'get',
-    };
-    const ans = {
-        success: {
-            code: 200,
-            result,
-        },
-    };
+async function getProcess (req, res, next) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(getBadRequestError(errors.array()[0].msg));
+    }
 
-    res.json(ans);
-    res.status(200);
+    const userName = req.body.userName;
+
+    const decodedUserName = req.decoded.userName;
+
+    if (userName !== decodedUserName) {
+        const msg = `invalid user name: ${userName} != ${decodedUserName}`;
+        return res.status(400).json(getBadRequestError(msg));
+    }
+
+    const t = await sequelize.transaction().catch(next);
+
+    try {
+        const logs = await MemoLogMemorization.findAll({
+            where: {
+                userName,
+            },
+            include: [
+                {
+                    model: MemoTrialDeck,
+                    where: {
+                        trialDeckId: Sequelize.col('memo_trial_deck.trial_deck_id'),
+                    },
+                },
+                {
+                    model: MemoElement,
+                    where: {
+                        elementId: Sequelize.col('memo_element.element_id'),
+                    },
+                },
+            ],
+            order: [
+                [ 'trialDeckId', 'ASC', ],
+                [ 'ind', 'ASC', ],
+            ],
+            transaction: t,
+        });
+
+        const ans = {
+            success: {
+                code: 200,
+                result: {
+                    logs,
+                },
+            },
+        };
+
+        await t.commit();
+        res.json(ans);
+        res.status(200);
+        return;
+    } catch (err) {
+        await t.rollback();
+        next(err);
+    }
 };
 
 async function postProcess (req, res, next) {

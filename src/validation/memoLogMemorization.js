@@ -1,6 +1,11 @@
 const { body, } = require('express-validator');
 
 const getProcess = [
+    body('userName')
+        .exists({ checkNull: true, })
+        .isString()
+        .notEmpty()
+        .withMessage('userName param is invalid for memoLogMemorization.getProcess'),
 ];
 
 const postProcess = [
