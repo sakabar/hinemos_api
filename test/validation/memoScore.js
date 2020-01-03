@@ -6,7 +6,7 @@ describe('validation/memoScore.js', () => {
     describe('getProcess()', () => {
         it('正常系', async () => {
             const req = {
-                query: {
+                body: {
                     userName: 'taro',
                 },
             };
@@ -20,7 +20,7 @@ describe('validation/memoScore.js', () => {
 
         it('異常系: userNameがない', async () => {
             const req = {
-                query: {
+                body: {
                     // userName: 'taro',
                 },
             };
@@ -34,7 +34,7 @@ describe('validation/memoScore.js', () => {
 
         it('異常系: userNameが空文字列', async () => {
             const req = {
-                query: {
+                body: {
                     userName: '',
                 },
             };

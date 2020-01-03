@@ -2330,8 +2330,9 @@ sequelize.sync().then(() => {
     // app.get(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.getProcess, route.memoLogMemorization.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/memoLogMemorization`, validation.memoLogMemorization.postProcess, route.memoLogMemorization.postProcess);
 
-    app.get(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
-    app.post(`${process.env.EXPRESS_ROOT}/memoScore`, validation.memoScore.postProcess, route.memoScore.postProcess);
+    // トークンをGETメソッドのqueryに乗せるとマズそうなのでPOST
+    app.post(`${process.env.EXPRESS_ROOT}/getMemoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/postMemoScore`, validation.memoScore.postProcess, route.memoScore.postProcess);
 
     // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.postProcess, route.memoTrial.postProcess);

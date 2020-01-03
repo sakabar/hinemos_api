@@ -13,8 +13,11 @@ async function getProcess (req, res, next) {
         return res.status(400).json(getBadRequestError(errors.array()[0].msg));
     }
 
+    const userName = req.body.userName;
+    const event = req.body.event;
+    const mode = req.body.mode;
+
     const decodedUserName = req.decoded.userName;
-    const userName = req.query.userName;
 
     if (userName !== decodedUserName) {
         const msg = `invalid user name: ${userName} != ${decodedUserName}`;
@@ -23,15 +26,23 @@ async function getProcess (req, res, next) {
 
     const t = await sequelize.transaction().catch(next);
 
+    let where = {
+        trialId: Sequelize.col('memo_trial.trial_id'),
+        userName,
+    };
+    if (event && event !== '') {
+        where['event'] = event;
+    }
+    if (mode && mode !== '') {
+        where['mode'] = mode;
+    }
+
     try {
         const scores = await MemoScore.findAll({
             include: [
                 {
                     model: MemoTrial,
-                    where: {
-                        trialId: Sequelize.col('memo_trial.trial_id'),
-                        userName,
-                    },
+                    where,
                 },
             ],
             order: [

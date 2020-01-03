@@ -19,7 +19,7 @@ describe('route/memoScore.js', () => {
                 decoded: {
                     userName: 'taro',
                 },
-                query: {
+                body: {
                     userName: 'saburo',
                 },
             };
