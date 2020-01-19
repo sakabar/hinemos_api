@@ -223,9 +223,6 @@ sequelize.sync().then(() => {
     // これは用意しない
     // app.post(`${process.env.EXPRESS_ROOT}/memoElement`, validation.memoElement.postProcess, route.memoElement.postProcess);
 
-    // app.get(`${process.env.EXPRESS_ROOT}/memoLogRecall`, validation.memoLogRecall.getProcess, route.memoLogRecall.getProcess);
-    // app.post(`${process.env.EXPRESS_ROOT}/memoLogRecall`, validation.memoLogRecall.postProcess, route.memoLogRecall.postProcess);
-
     app.post(process.env.EXPRESS_ROOT + '/users', (req, res, next) => {
         const userName = req.body.userName;
         const inputPassword = req.body.password;
@@ -2330,6 +2327,10 @@ sequelize.sync().then(() => {
     // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
     app.post(`${process.env.EXPRESS_ROOT}/getMemoLog`, validation.memoLogMemorization.getProcess, route.memoLogMemorization.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/postMemoLog`, validation.memoLogMemorization.postProcess, route.memoLogMemorization.postProcess);
+
+    // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
+    app.post(`${process.env.EXPRESS_ROOT}/getRecallLog`, validation.memoLogRecall.getProcess, route.memoLogRecall.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/postRecallLog`, validation.memoLogRecall.postProcess, route.memoLogRecall.postProcess);
 
     // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
     app.post(`${process.env.EXPRESS_ROOT}/getMemoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
