@@ -9,7 +9,7 @@ describe('validation/memoTrial.js', () => {
                 body: {
                     userName: 'taro',
                     mode: 'memorization',
-                    deckIds: [ 1, 2, ],
+                    deckIds: [ '1', '2', ],
                 },
             };
 
@@ -25,7 +25,7 @@ describe('validation/memoTrial.js', () => {
                 body: {
                     // userName: 'taro',
                     mode: 'memorization',
-                    deckIds: [ 1, 2, ],
+                    deckIds: [ '1', '2', ],
                 },
             };
 
@@ -41,7 +41,7 @@ describe('validation/memoTrial.js', () => {
                 body: {
                     userName: '',
                     mode: 'memorization',
-                    deckIds: [ 1, 2, ],
+                    deckIds: [ '1', '2', ],
                 },
             };
 
@@ -57,7 +57,7 @@ describe('validation/memoTrial.js', () => {
                 body: {
                     userName: 'taro',
                     mode: 'MOMOrization',
-                    deckIds: [ 1, 2, ],
+                    deckIds: [ '1', '2', ],
                 },
             };
 

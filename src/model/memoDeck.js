@@ -1,5 +1,3 @@
-const path = require('path');
-
 module.exports = (sequelize, DataTypes) => {
     const db = sequelize.define('memo_deck', {
         deckId: {

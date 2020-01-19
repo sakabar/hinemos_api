@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
             field: 'mode',
             type: DataTypes.STRING,
             allowNull: false,
-        }
+        },
     }, {
         freezeTableName: true,
         tableName: 'memo_trial',
