@@ -128,7 +128,7 @@ async function postProcess (req, res, next) {
             const instance = {
                 ...log,
                 elementId,
-                isRecalled: elementId === log.solutionElementId ? 1 : 0,
+                isCorrect: elementId === log.solutionElementId ? 1 : 0,
             };
             return instance;
         });

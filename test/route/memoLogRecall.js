@@ -112,7 +112,7 @@ describe('route/memoLogRecall.js', () => {
                 solutionElementId: 8,
                 losingMemorySec: 7.0,
                 elementId: 8,
-                isRecalled: 1,
+                isCorrect: 1,
             };
 
             const expectedInstance2 = {
@@ -126,7 +126,7 @@ describe('route/memoLogRecall.js', () => {
                 solutionElementId: 19,
                 losingMemorySec: 17.0,
                 elementId: 18,
-                isRecalled: 0,
+                isCorrect: 0,
             };
 
             const expectedJson = {
@@ -193,7 +193,7 @@ describe('route/memoLogRecall.js', () => {
                     solutionElementId: 8,
                     losingMemorySec: 7.0,
                     elementId: 8,
-                    isRecalled: 1,
+                    isCorrect: 1,
                 },
                 {
                     trialDeckId: 11,
@@ -206,7 +206,7 @@ describe('route/memoLogRecall.js', () => {
                     solutionElementId: 19,
                     losingMemorySec: 17.0,
                     elementId: 18,
-                    isRecalled: 0,
+                    isCorrect: 0,
                 },
             ], { transaction: t, }).returns(Promise.resolve([]));
             memoLogRecallBulkCreateStub.throws(new Error('unexpected argument for bulkCreate()'));
@@ -269,7 +269,7 @@ describe('route/memoLogRecall.js', () => {
                 solutionElementId: 8,
                 losingMemorySec: 7.0,
                 elementId: 8,
-                isRecalled: 1,
+                isCorrect: 1,
             };
 
             const expectedInstance2 = {
@@ -283,7 +283,7 @@ describe('route/memoLogRecall.js', () => {
                 solutionElementId: null,
                 losingMemorySec: 17.0,
                 elementId: 18,
-                isRecalled: 0,
+                isCorrect: 0,
             };
 
             const expectedJson = {
@@ -350,7 +350,7 @@ describe('route/memoLogRecall.js', () => {
                     solutionElementId: 8,
                     losingMemorySec: 7.0,
                     elementId: 8,
-                    isRecalled: 1,
+                    isCorrect: 1,
                 },
                 {
                     trialDeckId: 11,
@@ -363,7 +363,7 @@ describe('route/memoLogRecall.js', () => {
                     solutionElementId: null,
                     losingMemorySec: 17.0,
                     elementId: 18,
-                    isRecalled: 0,
+                    isCorrect: 0,
                 },
             ], { transaction: t, }).returns(Promise.resolve([]));
             memoLogRecallBulkCreateStub.throws(new Error('unexpected argument for bulkCreate()'));
@@ -426,7 +426,7 @@ describe('route/memoLogRecall.js', () => {
                 solutionElementId: 8,
                 losingMemorySec: 7.0,
                 elementId: 8,
-                isRecalled: 1,
+                isCorrect: 1,
             };
 
             const expectedInstance2 = {
@@ -440,7 +440,7 @@ describe('route/memoLogRecall.js', () => {
                 solutionElementId: 19,
                 losingMemorySec: null,
                 elementId: 18,
-                isRecalled: 0,
+                isCorrect: 0,
             };
 
             const expectedJson = {
@@ -507,7 +507,7 @@ describe('route/memoLogRecall.js', () => {
                     solutionElementId: 8,
                     losingMemorySec: 7.0,
                     elementId: 8,
-                    isRecalled: 1,
+                    isCorrect: 1,
                 },
                 {
                     trialDeckId: 11,
@@ -520,7 +520,7 @@ describe('route/memoLogRecall.js', () => {
                     solutionElementId: 19,
                     losingMemorySec: null,
                     elementId: 18,
-                    isRecalled: 0,
+                    isCorrect: 0,
                 },
             ], { transaction: t, }).returns(Promise.resolve([]));
             memoLogRecallBulkCreateStub.throws(new Error('unexpected argument for bulkCreate()'));

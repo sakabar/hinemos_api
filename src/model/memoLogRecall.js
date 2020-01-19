@@ -62,9 +62,9 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.DOUBLE,
             allowNull: true,
         },
-        isRecalled: {
+        isCorrect: {
             // 情報としては冗長だが、集計をやりやすくするために保存
-            field: 'isRecalled',
+            field: 'is_correct',
             type: DataTypes.INTEGER,
             allowNull: false,
         },
