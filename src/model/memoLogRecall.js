@@ -93,5 +93,11 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'deckElementId',
     });
 
+    const MemoElement = sequelize.import(path.join(__dirname, '/memoElement'));
+    db.belongsTo(MemoElement, {
+        foreignKey: 'elementId',
+        targetKey: 'elementId',
+    });
+
     return db;
 };
