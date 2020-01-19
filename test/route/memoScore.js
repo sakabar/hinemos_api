@@ -71,6 +71,7 @@ describe('route/memoScore.js', () => {
                 body: {
                     trialId: '1',
                     totalMemoSec: '123.4',
+                    totalRecallSec: '567.8',
 
                     successDeckNum: '2',
                     triedDeckNum: '3',
@@ -85,6 +86,7 @@ describe('route/memoScore.js', () => {
             const params = {
                 trialId: 1,
                 totalMemoSec: 123.4,
+                totalRecallSec: 567.8,
 
                 successDeckNum: 2,
                 triedDeckNum: 3,
@@ -146,6 +148,7 @@ describe('route/memoScore.js', () => {
                 body: {
                     trialId: '1',
                     totalMemoSec: '123.4',
+                    totalRecallSec: '',
 
                     successDeckNum: '',
                     triedDeckNum: '3',
@@ -160,6 +163,7 @@ describe('route/memoScore.js', () => {
             const params = {
                 trialId: 1,
                 totalMemoSec: 123.4,
+                totalRecallSec: null,
 
                 successDeckNum: null,
                 triedDeckNum: 3,

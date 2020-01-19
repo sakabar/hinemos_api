@@ -97,7 +97,8 @@ async function postProcess (req, res, next) {
                 pairInd: parseInt(log.pairInd),
                 posInd: parseInt(log.posInd),
                 deckElementId: parseInt(log.deckElementId),
-                losingMemorySec: parseFloat(log.losingMemorySec),
+                solutionElementId: log.solutionElementId ? parseInt(log.solutionElementId) : null,
+                losingMemorySec: log.losingMemorySec ? parseFloat(log.losingMemorySec) : null,
             };
         });
 
@@ -122,14 +123,17 @@ async function postProcess (req, res, next) {
         });
 
         const bulk = logs.map(log => {
+            const elementId = deckElementIdToElementId[log.deckElementId];
+
             const instance = {
                 ...log,
-                elementId: deckElementIdToElementId[log.deckElementId],
+                elementId,
+                isRecalled: elementId === log.solutionElementId ? 1 : 0,
             };
             return instance;
         });
 
-        // console.dir(JSON.stringify(bulk));
+        console.dir(JSON.stringify(bulk));
         await MemoLogRecall.bulkCreate(bulk, { transaction: t, });
 
         // Auto Incrementのパラメータは返さない

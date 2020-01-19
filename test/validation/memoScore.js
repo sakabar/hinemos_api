@@ -53,6 +53,7 @@ describe('validation/memoScore.js', () => {
                 body: {
                     trialId: '1',
                     totalMemoSec: '123.4',
+                    totalRecallSec: '567.8',
 
                     successDeckNum: '1',
                     triedDeckNum: '2',
@@ -72,11 +73,12 @@ describe('validation/memoScore.js', () => {
             assert.deepStrictEqual(true, errors.isEmpty());
         });
 
-        it('正常系: successDeckNum, successElementNumが空文字でもOK', async () => {
+        it('正常系: totalRecallSec, successDeckNum, successElementNumが空文字でもOK', async () => {
             const req = {
                 body: {
                     trialId: '1',
                     totalMemoSec: '123.4',
+                    totalRecallSec: '',
 
                     successDeckNum: '',
                     triedDeckNum: '2',

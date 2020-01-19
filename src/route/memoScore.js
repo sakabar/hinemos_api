@@ -79,6 +79,8 @@ async function postProcess (req, res, next) {
     try {
         const trialId = parseInt(req.body.trialId);
         const totalMemoSec = parseFloat(req.body.totalMemoSec);
+        // 空文字の場合があるので注意!
+        const totalRecallSec = req.body.totalRecallSec === '' ? null : parseFloat(req.body.totalRecallSec);
 
         // 空文字の場合があるので注意!
         const successDeckNum = req.body.successDeckNum === '' ? null : parseInt(req.body.successDeckNum);
@@ -101,6 +103,7 @@ async function postProcess (req, res, next) {
             {
                 trialId,
                 totalMemoSec,
+                totalRecallSec,
 
                 successDeckNum,
                 triedDeckNum,

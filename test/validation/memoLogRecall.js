@@ -60,6 +60,7 @@ describe('validation/memoLogRecall.js', () => {
                             pairInd: '3',
                             posInd: '4',
                             deckElementId: '5',
+                            solutionElementId: '5',
                             losingMemorySec: '6.0',
                         },
                     ],

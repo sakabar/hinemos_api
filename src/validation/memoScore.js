@@ -25,6 +25,10 @@ const postProcess = [
         .isString()
         .withMessage('totalMemoSec param is invalid for memoScore.postProcess'),
 
+    body('totalRecallSec')
+        .exists()
+        .withMessage('successDeckNum param is invalid for memoScore.postProcess'),
+
     body('successDeckNum')
         .exists()
         .withMessage('successDeckNum param is invalid for memoScore.postProcess'),

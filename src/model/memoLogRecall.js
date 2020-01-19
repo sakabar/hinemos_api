@@ -50,12 +50,20 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        solutionElementId: {
+            // どのイメージを回答したか。無回答もしくはelementとして存在しない場合はnull
+            field: 'solution_element_id',
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         losingMemorySec: {
+            // 記憶時に見ていない場合は意味がないのでnullとする
             field: 'losing_memory_sec',
             type: DataTypes.DOUBLE,
-            allowNull: false,
+            allowNull: true,
         },
         isRecalled: {
+            // 情報としては冗長だが、集計をやりやすくするために保存
             field: 'isRecalled',
             type: DataTypes.INTEGER,
             allowNull: false,
