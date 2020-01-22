@@ -10,8 +10,13 @@ const logger = require('fluent-logger');
 const math = require('mathjs');
 const moment = require('moment');
 const path = require('path');
-const utils = require('./src/lib/utils');
 const Sequelize = require('sequelize');
+const route = require('./src/route');
+const validation = require('./src/validation');
+const utils = require('./src/lib/utils');
+const { badRequestError, } = require('./src/lib/utils');
+const { sequelize, } = require('./src/model');
+
 const Op = Sequelize.Op;
 
 // Fluentd
@@ -171,27 +176,6 @@ const calcRecentMo3OfThreeStyleQuizLog = (quizLogs) => {
     return ans.sort((a, b) => (a.solved - b.solved) || -(a.tried - b.tried) || -(a['avg_sec'] - b['avg_sec']));
 };
 
-const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASS,
-    {
-        host: process.env.DB_HOST,
-        dialect: 'mysql',
-
-        pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000,
-        },
-
-        // http://docs.sequelizejs.com/manual/tutorial/querying.html#operators
-        operatorsAliases: false,
-        timezone: '+09:00',
-    }
-);
-
 const User = sequelize.import(path.join(__dirname, 'src/model/user'));
 const FaceColor = sequelize.import(path.join(__dirname, '/src/model/faceColor'));
 const LetterPair = sequelize.import(path.join(__dirname, '/src/model/letterPair'));
@@ -235,12 +219,9 @@ sequelize.sync().then(() => {
         next();
     });
 
-    const badRequestError = {
-        error: {
-            message: 'Bad Request',
-            code: 400,
-        },
-    };
+    app.get(`${process.env.EXPRESS_ROOT}/memoElement`, validation.memoElement.getProcess, route.memoElement.getProcess);
+    // これは用意しない
+    // app.post(`${process.env.EXPRESS_ROOT}/memoElement`, validation.memoElement.postProcess, route.memoElement.postProcess);
 
     app.post(process.env.EXPRESS_ROOT + '/users', (req, res, next) => {
         const userName = req.body.userName;
@@ -2339,6 +2320,24 @@ sequelize.sync().then(() => {
                     });
             });
     });
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.getProcess, route.memoDeck.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoDeck`, validation.memoDeck.postProcess, route.memoDeck.postProcess);
+
+    // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
+    app.post(`${process.env.EXPRESS_ROOT}/getMemoLog`, validation.memoLogMemorization.getProcess, route.memoLogMemorization.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/postMemoLog`, validation.memoLogMemorization.postProcess, route.memoLogMemorization.postProcess);
+
+    // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
+    app.post(`${process.env.EXPRESS_ROOT}/getRecallLog`, validation.memoLogRecall.getProcess, route.memoLogRecall.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/postRecallLog`, validation.memoLogRecall.postProcess, route.memoLogRecall.postProcess);
+
+    // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
+    app.post(`${process.env.EXPRESS_ROOT}/getMemoScore`, validation.memoScore.getProcess, route.memoScore.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/postMemoScore`, validation.memoScore.postProcess, route.memoScore.postProcess);
+
+    // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.postProcess, route.memoTrial.postProcess);
 
     server.listen(process.env.EXPRESS_PORT);
 });
