@@ -18,6 +18,21 @@ describe('validation/memoLogMemorization.js', () => {
             assert.deepStrictEqual(true, errors.isEmpty());
         });
 
+        it('正常系: trialIdがある場合', async () => {
+            const req = {
+                body: {
+                    userName: 'taro',
+                    trialId: 5,
+                },
+            };
+
+            for (const fn of memoLogMemorizationValidation.getProcess) {
+                await fn(req, {}, () => {});
+            }
+            const errors = validationResult(req);
+            assert.deepStrictEqual(true, errors.isEmpty());
+        });
+
         it('userNameが空', async () => {
             const req = {
                 body: {
