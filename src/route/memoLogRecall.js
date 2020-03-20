@@ -17,6 +17,9 @@ async function getProcess (req, res, next) {
 
     const userName = req.body.userName;
 
+    // 数値 or undeinfed
+    const trialId = req.body.trialId;
+
     const decodedUserName = req.decoded.userName;
 
     if (userName !== decodedUserName) {
@@ -26,6 +29,14 @@ async function getProcess (req, res, next) {
 
     const t = await sequelize.transaction().catch(next);
 
+    const where = {
+        trialDeckId: Sequelize.col('memo_trial_deck.trial_deck_id'),
+    };
+
+    if (trialId) {
+        where.trialId = trialId;
+    }
+
     try {
         const logs = await MemoLogRecall.findAll({
             where: {
@@ -34,9 +45,7 @@ async function getProcess (req, res, next) {
             include: [
                 {
                     model: MemoTrialDeck,
-                    where: {
-                        trialDeckId: Sequelize.col('memo_trial_deck.trial_deck_id'),
-                    },
+                    where,
                 },
                 {
                     model: MemoElement,
