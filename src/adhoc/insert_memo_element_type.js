@@ -6,6 +6,7 @@ const MemoElementType = sequelize.import(path.join(__dirname, '../model/memoElem
 const types = [
     'letter',
     'card',
+    'number',
 ];
 
 const bulk = types.map(type => {

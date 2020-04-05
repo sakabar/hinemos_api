@@ -6,6 +6,7 @@ const MemoEvent = sequelize.import(path.join(__dirname, '../model/memoEvent'));
 const events = [
     'mbld',
     'cards',
+    'numbers',
 ];
 
 const bulk = events.map(event => {
