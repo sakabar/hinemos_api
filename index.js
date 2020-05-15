@@ -399,23 +399,14 @@ sequelize.sync().then(() => {
 
         LetterPair.findAll(query).then((tmpResult) => {
             // ユーザ名をマスク
-            const result = _.cloneDeep(tmpResult);
-            for (let i = 0; i < result.length; i++) {
-                const masked = getHashedPassword(result[i].userName, 'dummy');
-                result[i].setDataValue('userName', masked);
-            }
+            const result = tmpResult.map(elm => {
+                const plainElm = elm.get({ plain: true });
 
-            logger.emit('api.request', {
-                requestType: 'GET',
-                endpoint: '/hinemos/letterPair',
-                params: {
-                    userName,
-                    word,
-                    letters,
-                },
-                status: 'success',
-                code: 200,
-                msg: '',
+                // sha256に変換し、最初の8桁のみ採用
+                // 複数のユーザで同じ値になることはほぼ無いはず
+                const masked = getHashedPassword(plainElm.userName, 'dummy').slice(0, 8);
+                plainElm.userName = masked;
+                return plainElm;
             });
 
             res.json(
@@ -427,18 +418,6 @@ sequelize.sync().then(() => {
                 });
             res.status(200);
         }, () => {
-            logger.emit('api.request', {
-                requestType: 'GET',
-                endpoint: '/hinemos/letterPair',
-                params: {
-                    userName,
-                    word,
-                    letters,
-                },
-                status: 'error',
-                code: 400,
-                msg: '',
-            });
             res.status(400).send(badRequestError);
         });
     });
