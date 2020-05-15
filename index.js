@@ -405,19 +405,6 @@ sequelize.sync().then(() => {
                 result[i].setDataValue('userName', masked);
             }
 
-            logger.emit('api.request', {
-                requestType: 'GET',
-                endpoint: '/hinemos/letterPair',
-                params: {
-                    userName,
-                    word,
-                    letters,
-                },
-                status: 'success',
-                code: 200,
-                msg: '',
-            });
-
             res.json(
                 {
                     success: {
@@ -427,18 +414,6 @@ sequelize.sync().then(() => {
                 });
             res.status(200);
         }, () => {
-            logger.emit('api.request', {
-                requestType: 'GET',
-                endpoint: '/hinemos/letterPair',
-                params: {
-                    userName,
-                    word,
-                    letters,
-                },
-                status: 'error',
-                code: 400,
-                msg: '',
-            });
             res.status(400).send(badRequestError);
         });
     });
