@@ -1,5 +1,4 @@
 require('dotenv').config();
-const _ = require('lodash');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const express = require('express');
@@ -400,7 +399,7 @@ sequelize.sync().then(() => {
         LetterPair.findAll(query).then((tmpResult) => {
             // ユーザ名をマスク
             const result = tmpResult.map(elm => {
-                const plainElm = elm.get({ plain: true });
+                const plainElm = elm.get({ plain: true, });
 
                 // sha256に変換し、最初の8桁のみ採用
                 // 複数のユーザで同じ値になることはほぼ無いはず
@@ -421,6 +420,8 @@ sequelize.sync().then(() => {
             res.status(400).send(badRequestError);
         });
     });
+
+    app.get(process.env.EXPRESS_ROOT + '/letterPairCount', route.letterPairCount.getProcess);
 
     // 直近28日(envファイルで指定)の中で、直近の mean of 3 を計算
     app.get(process.env.EXPRESS_ROOT + '/letterPairQuizLog/:userName', (req, res, next) => {

@@ -4,3 +4,5 @@ exports.memoLogMemorization = require('./memoLogMemorization');
 exports.memoLogRecall = require('./memoLogRecall');
 exports.memoScore = require('./memoScore');
 exports.memoTrial = require('./memoTrial');
+
+exports.letterPairCount = require('./letterPairCount');
