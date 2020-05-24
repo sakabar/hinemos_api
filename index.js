@@ -16,7 +16,6 @@ const { badRequestError, } = require('./src/lib/utils');
 const { sequelize, } = require('./src/model');
 
 const Op = Sequelize.Op;
-const router = require('./src/router');
 
 // Fluentd
 logger.configure(process.env.FLUENTD_TAG, {
@@ -187,10 +186,6 @@ const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '/src/mode
 const ThreeStyleQuizLogEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizLogEdgeMiddle'));
 const ThreeStyleQuizListCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListCorner'));
 const ThreeStyleQuizListEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListEdgeMiddle'));
-
-const db = {};
-db.ThreeStyleQuizListNameCorner = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListNameCorner'));
-db.ThreeStyleQuizListNameEdgeMiddle = sequelize.import(path.join(__dirname, '/src/model/threeStyleQuizListNameEdgeMiddle'));
 
 const getHashedPassword = (userName, password) => {
     const sha512 = crypto.createHash('sha512');
@@ -376,6 +371,9 @@ sequelize.sync().then(() => {
             });
         });
     });
+
+    app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizProblemListDetail/:part`, route.threeStyleQuizProblemListDetail.getProcess);
+    // app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizProblemListDetail/:part`, route.threeStyleQuizProblemListDetail.postProcess);
 
     // /letterPair/:userName?word=試験
     // /letterPair/:userName?letters=しけ
@@ -1839,13 +1837,8 @@ sequelize.sync().then(() => {
     // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.postProcess, route.memoTrial.postProcess);
 
-    app.get(process.env.EXPRESS_ROOT + '/threeStyleQuizListName/:part', (req, res, next) => {
-        router.threeStyleQuizListName.getProcess(req, res, next, db, logger);
-    });
-
-    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizListName/:part`, (req, res, next) => {
-        router.threeStyleQuizListName.postProcess(req, res, next, db, logger);
-    });
+    app.get(`${process.env.EXPRESS_ROOT}/threeStyleQuizProblemListName/:part`, route.threeStyleQuizProblemListName.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/threeStyleQuizProblemListName/:part`, route.threeStyleQuizProblemListName.postProcess);
 
     server.listen(process.env.EXPRESS_PORT);
 });

@@ -1,15 +1,20 @@
 const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
-    const db = sequelize.define('three_sytle_quiz_list_name_corner', {
-        id: {
-            field: 'id',
+    const db = sequelize.define('three_sytle_quiz_problem_list_name_edge_middle', {
+        problemListId: {
+            field: 'problemListId',
             type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true,
         },
         userName: {
             field: 'user_name',
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        buffer: {
+            field: 'buffer',
             type: DataTypes.STRING,
             allowNull: false,
         },
@@ -20,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         },
     }, {
         freezeTableName: true,
-        tableName: 'three_style_quiz_list_name_corner',
+        tableName: 'three_style_quiz_problem_list_name_edge_middle',
         charset: 'utf8',
         collate: 'utf8_unicode_ci',
     });
