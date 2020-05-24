@@ -39,7 +39,7 @@ const getNumberingModel = (part) => {
     }
 };
 
-// 取り得るレターペアの一覧を
+// 3-styleに出てくる全てのレターペアの一覧を返す
 const getAllNumberingPair = (part, userName) => {
     const numberingModel = getNumberingModel(part);
     if (!numberingModel) {

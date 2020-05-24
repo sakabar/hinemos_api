@@ -2,8 +2,8 @@ const path = require('path');
 
 module.exports = (sequelize, DataTypes) => {
     const db = sequelize.define('three_sytle_quiz_problem_list_name_corner', {
-      problemListId: {
-            field: 'problemListId',
+        problemListId: {
+            field: 'problem_list_id',
             type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true,
@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         numberOfAlgs: {
-            field: 'numberOfAlgs',
+            field: 'number_of_algs',
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0,

@@ -5,6 +5,19 @@ const { getBadRequestError, } = require('../lib/utils');
 const ThreeStyleQuizProblemListNameCorner = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCorner'));
 const ThreeStyleQuizProblemListNameEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameEdgeMiddle'));
 
+const NumberingCorner = sequelize.import(path.join(__dirname, '../../src/model/numberingCorner'));
+const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/numberingEdgeMiddle'));
+
+const getNumberingModel = (part) => {
+    if (part === 'corner') {
+        return NumberingCorner;
+    } else if (part === 'edgeMiddle') {
+        return NumberingEdgeMiddle;
+    } else {
+        return null;
+    }
+};
+
 const getProcess = (req, res, next) => {
     const userName = req.decoded.userName;
     const part = req.params.part;
@@ -19,26 +32,42 @@ const getProcess = (req, res, next) => {
         return;
     }
 
-    const query = {
-        where: {
-            userName,
-        },
-    };
+    const numberingModel = getNumberingModel(part);
 
-    return model
-        .findAll(query)
-        .then((result) => {
-            const ans = {
-                success: {
-                    code: 200,
-                    result,
+    return numberingModel.findOne(
+        {
+            where: {
+                userName,
+                letter: '@',
+            },
+            raw: true,
+        }
+    )
+        .then(ans => {
+            const buffer = ans.sticker;
+
+            const query = {
+                where: {
+                    userName,
+                    buffer,
                 },
             };
 
-            res.json(ans);
-            res.status(200);
-        }, () => {
-            res.status(400).send(getBadRequestError(''));
+            return model
+                .findAll(query)
+                .then((result) => {
+                    const ans = {
+                        success: {
+                            code: 200,
+                            result,
+                        },
+                    };
+
+                    res.json(ans);
+                    res.status(200);
+                }, () => {
+                    res.status(400).send(getBadRequestError(''));
+                });
         });
 };
 
@@ -47,10 +76,9 @@ const postProcess = (req, res, next) => {
     const userName = req.decoded.userName;
     const part = req.params.part;
 
-    const buffer = req.body.buffer;
+    const numberingModel = getNumberingModel(part);
     const titles = req.body.titles;
-
-    if (!userName || !titles || !(part === 'corner' || part === 'edgeMiddle') || !buffer) {
+    if (!userName || !titles || !(part === 'corner' || part === 'edgeMiddle') || !numberingModel) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
@@ -67,37 +95,50 @@ const postProcess = (req, res, next) => {
 
     sequelize
         .transaction((t) => {
-            const promises = titles.split(',').map(title => {
-                const instance = {
-                    userName,
-                    buffer,
-                    title,
-                };
+            return numberingModel.findOne(
+                {
+                    where: {
+                        userName,
+                        letter: '@',
+                    },
+                    raw: true,
+                }
+            )
+                .then(ans => {
+                    const buffer = ans.sticker;
 
-                return model
-                    .create(instance, {
-                        transaction: t,
-                    })
-                    .then((result) => {
-                        return result;
+                    const promises = titles.split(',').map(title => {
+                        const instance = {
+                            userName,
+                            buffer,
+                            title,
+                        };
+
+                        return model
+                            .create(instance, {
+                                transaction: t,
+                            })
+                            .then((result) => {
+                                return result;
+                            });
                     });
-            });
 
-            return Promise.all(promises)
-                .then(result => {
-                    const ans = {
-                        success: {
-                            code: 200,
-                            result,
-                        },
-                    };
+                    return Promise.all(promises)
+                        .then(result => {
+                            const ans = {
+                                success: {
+                                    code: 200,
+                                    result,
+                                },
+                            };
 
-                    res.json(ans);
-                    res.status(200);
-                })
-                .catch(() => {
-                    t.rollback();
-                    res.status(400).send(getBadRequestError(''));
+                            res.json(ans);
+                            res.status(200);
+                        })
+                        .catch(() => {
+                            t.rollback();
+                            res.status(400).send(getBadRequestError(''));
+                        });
                 });
         });
 };

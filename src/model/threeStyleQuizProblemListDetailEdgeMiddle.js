@@ -12,13 +12,13 @@ module.exports = (sequelize, DataTypes) => {
 
     const db = sequelize.define('three_sytle_quiz_problem_list_detail_edge_middle', {
         problemListDetailId: {
-            field: 'problemListDetailId',
+            field: 'problem_list_detail_id',
             type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true,
         },
         problemListId: {
-            field: 'problemListId',
+            field: 'problem_list_id',
             type: DataTypes.INTEGER,
             allowNull: false,
         },
@@ -64,6 +64,7 @@ module.exports = (sequelize, DataTypes) => {
     db.belongsTo(ProblemListNameEdgeMiddle, {
         foreignKey: 'problemListId',
         targetKey: 'problemListId',
+        onDelete: 'cascade',
     });
 
     return db;
