@@ -2,6 +2,8 @@ const { sequelize, } = require('../model');
 const path = require('path');
 const { getBadRequestError, } = require('../lib/utils');
 
+const ThreeStyleQuizProblemListNameCorner = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCorner'));
+const ThreeStyleQuizProblemListNameEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameEdgeMiddle'));
 const ThreeStyleQuizProblemListDetailCorner = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListDetailCorner'));
 const ThreeStyleQuizProblemListDetailEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListDetailEdgeMiddle'));
 
@@ -34,6 +36,16 @@ const getNumberingModel = (part) => {
         return NumberingCorner;
     } else if (part === 'edgeMiddle') {
         return NumberingEdgeMiddle;
+    } else {
+        return null;
+    }
+};
+
+const getThreeStyleQuizProblemListNameModel = (part) => {
+    if (part === 'corner') {
+        return ThreeStyleQuizProblemListNameCorner;
+    } else if (part === 'edgeMiddle') {
+        return ThreeStyleQuizProblemListNameEdgeMiddle;
     } else {
         return null;
     }
@@ -88,15 +100,14 @@ const getAllNumberingPair = (part, userName) => {
 };
 
 const getProcess = (req, res, next) => {
-    // const userName = req.decoded.userName;
-    const userName = 'tsakakib'; // FIXME
+    const userName = req.decoded.userName;
     const part = req.params.part;
-    const problemListId = parseInt(req.query.problemListId) || null;
+    const problemListId = parseInt(req.body.problemListId) || null;
 
     const problemListDetailModel = getProblemListDetailModel(part);
 
     if (!problemListDetailModel) {
-        res.status(400).send(getBadRequestError(''));
+        res.status(400).send(getBadRequestError('part名が不正です'));
         return;
     }
 
@@ -126,9 +137,9 @@ const getProcess = (req, res, next) => {
 
             res.json(ans);
             res.status(200);
-        }, (err) => {
-            console.dir(err);
-            res.status(400).send(getBadRequestError(''));
+        })
+        .catch(() => {
+            res.status(400).send(getBadRequestError());
         });
 
     // やろうとしていることが結構複雑
@@ -156,63 +167,87 @@ const getProcess = (req, res, next) => {
     //     });
 };
 
-// titles: コンマ区切りの文字列
 const postProcess = (req, res, next) => {
     const userName = req.decoded.userName;
     const part = req.params.part;
+    const problemListId = req.body.problemListId;
 
-    const buffer = req.body.buffer;
-    const titles = req.body.titles;
+    // "DF UR UB,DF UR UL"のように、stickersをコンマでつないだ文字列
+    const stickersStr = req.body.stickersStr;
 
-    if (!userName || !titles || !(part === 'corner' || part === 'edgeMiddle') || !buffer) {
-        res.status(400).send(getBadRequestError(''));
+    const problemListDetailModel = getProblemListDetailModel(part);
+    const threeStyleQuizProblemListNameModel = getThreeStyleQuizProblemListNameModel(part);
+
+    if (!userName || !problemListId || !problemListDetailModel || !threeStyleQuizProblemListNameModel) {
+        res.status(400).send(getBadRequestError('パラメータが不正です'));
         return;
     }
 
-    let model;
-    if (part === 'corner') {
-        model = ThreeStyleQuizProblemListDetailCorner;
-    } else if (part === 'edgeMiddle') {
-        model = ThreeStyleQuizProblemListDetailEdgeMiddle;
-    } else {
-        res.status(400).send(getBadRequestError(''));
-        return;
-    }
+    return threeStyleQuizProblemListNameModel
+        .findOne({
+            where: {
+                userName,
+                problemListId,
+            },
+        })
+        .then(problemList => {
+            const buffer = problemList.buffer;
 
-    sequelize
-        .transaction((t) => {
-            const promises = titles.split(',').map(title => {
-                const instance = {
-                    userName,
-                    buffer,
-                    title,
-                };
-
-                return model
-                    .create(instance, {
-                        transaction: t,
-                    })
-                    .then((result) => {
-                        return result;
-                    });
-            });
-
-            return Promise.all(promises)
-                .then(result => {
-                    const ans = {
-                        success: {
-                            code: 200,
-                            result,
-                        },
+            const instances = stickersStr
+                .split(',')
+                .map(stickers => stickers.split(' '))
+                .filter(lst => lst.length === 3)
+                .map(lst => {
+                    return {
+                        problemListId,
+                        userName,
+                        buffer: lst[0],
+                        sticker1: lst[1],
+                        sticker2: lst[2],
+                        stickers: `${lst[0]} ${lst[1]} ${lst[2]}`,
                     };
-
-                    res.json(ans);
-                    res.status(200);
                 })
-                .catch(() => {
-                    t.rollback();
+                .filter(obj => obj.buffer === buffer);
+
+            if (instances.length === 0) {
+                res.status(400).send(getBadRequestError(''));
+                return;
+            }
+
+            return problemListDetailModel.bulkCreate(instances)
+                .then(() => {
+                    return threeStyleQuizProblemListNameModel
+                        .update({
+                            numberOfAlgs: problemList.numberOfAlgs + instances.length,
+                        }, {
+                            where: {
+                                problemListId: problemList.problemListId,
+                            },
+                        })
+                        .then(() => {
+                            const ans = {
+                                success: {
+                                    code: 200,
+                                    result: instances,
+                                },
+                            };
+
+                            res.json(ans);
+                            res.status(200);
+                        })
+                        .catch((err) => {
+                            console.dir(err);
+                            res.status(400).send(getBadRequestError(''));
+                        });
+                })
+                .catch((err) => {
+                    console.dir(err);
                     res.status(400).send(getBadRequestError(''));
                 });
+        })
+        .catch((err) => {
+            console.dir(err);
+            res.status(400).send(getBadRequestError(''));
         });
 };
 
