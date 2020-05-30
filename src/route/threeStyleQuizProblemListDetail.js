@@ -105,24 +105,59 @@ const getProcess = (req, res, next) => {
     const problemListId = parseInt(req.body.problemListId) || null;
 
     const problemListDetailModel = getProblemListDetailModel(part);
+    const numberingModel = getNumberingModel(part);
 
-    if (!problemListDetailModel) {
+    if (!problemListDetailModel || !numberingModel) {
         res.status(400).send(getBadRequestError('part名が不正です'));
         return;
     }
 
     return (() => {
         if (problemListId) {
-            return problemListDetailModel
+            return numberingModel
                 .findAll(
                     {
                         where: {
                             userName,
-                            problemListId,
                         },
                         raw: true,
                     }
-                );
+                )
+                .then(numberings => {
+                    const stickerToLetter = {};
+                    for (let i = 0; i < numberings.length; i++) {
+                        const numbering = numberings[i];
+                        stickerToLetter[numbering.sticker] = numbering.letter;
+                    }
+
+                    return problemListDetailModel
+                        .findAll(
+                            {
+                                where: {
+                                    userName,
+                                    problemListId,
+                                },
+                                raw: true,
+                            }
+                        )
+                        .then(problemListDetails => {
+                            return problemListDetails.map(problemListDetail => {
+                                const letter1 = stickerToLetter[problemListDetail.sticker1];
+                                const letter2 = stickerToLetter[problemListDetail.sticker2];
+                                const letters = `${letter1}${letter2}`;
+                                problemListDetail.letters = letters;
+                                return problemListDetail;
+                            });
+                        })
+                        .catch((err) => {
+                            console.dir(err);
+                            return Promise.reject(new Error());
+                        });
+                })
+                .catch((err) => {
+                    console.dir(err);
+                    return Promise.reject(new Error());
+                });
         } else {
             return getAllNumberingPair(part, userName);
         }
@@ -210,6 +245,7 @@ const postProcess = (req, res, next) => {
                 .filter(obj => obj.buffer === buffer);
 
             if (instances.length === 0) {
+                console.dir('ゼロ');
                 res.status(400).send(getBadRequestError(''));
                 return;
             }
