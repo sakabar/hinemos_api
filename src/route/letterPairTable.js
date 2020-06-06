@@ -1,6 +1,8 @@
 const { sequelize, } = require('../model');
 const path = require('path');
 const { getBadRequestError, } = require('../lib/utils');
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 const LetterPair = sequelize.import(path.join(__dirname, '../model/letterPair'));
 
@@ -13,18 +15,39 @@ const postProcess = (req, res, next) => {
         return;
     }
 
+    // 同じ単語が複数のlettersに割り当てられていたらエラーを出す
+    const wordToLetters = {};
+    letterPairTable.map(record => {
+        const letters = record.letters;
+        const words = record.words;
+
+        words.map(word => {
+            if (word in wordToLetters) {
+                const msg = `『エラー: ひらがな「${wordToLetters[word]}」と「${letters}」の両方に単語「${word}」が使われています。』`;
+                throw new Error(msg);
+            } else {
+                wordToLetters[word] = letters;
+            }
+        });
+    });
+
+    const wordsInRequest = letterPairTable.map(r => r.words).reduce((acc, crr) => { return acc.concat(crr); }, []);
+
     sequelize
         .transaction((t) => {
-            // まず今のletterPairを消す
+            // まず今のletterPairの中から、新しいLetterPairTableに含まれていない単語を消す
             return LetterPair
                 .destroy({
                     where: {
                         userName,
+                        words: {
+                            [Op.notIn]: wordsInRequest,
+                        },
                     },
                     transaction: t,
                 })
                 .then((result) => {
-                    // 次に、UIの表から入力された情報で更新
+                    // 次に、UIの表から入力された情報でupsert
                     const promises = [];
                     for (let i = 0; i < letterPairTable.length; i++) {
                         const words = letterPairTable[i].words;
