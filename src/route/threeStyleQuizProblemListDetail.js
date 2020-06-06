@@ -78,7 +78,6 @@ const getAllNumberingPair = (part, userName) => {
                     const numbering2 = numberingsWithoutBuffer[k];
 
                     const record = {
-                        userName,
                         buffer: buffer.sticker,
                         sticker1: numbering1.sticker,
                         sticker2: numbering2.sticker,
@@ -104,10 +103,11 @@ const getProcess = (req, res, next) => {
     const part = req.params.part;
     const problemListId = parseInt(req.body.problemListId) || null;
 
+    const threeStyleQuizProblemListNameModel = getThreeStyleQuizProblemListNameModel(part);
     const problemListDetailModel = getProblemListDetailModel(part);
     const numberingModel = getNumberingModel(part);
 
-    if (!problemListDetailModel || !numberingModel) {
+    if (!threeStyleQuizProblemListNameModel || !problemListDetailModel || !numberingModel) {
         res.status(400).send(getBadRequestError('part名が不正です'));
         return;
     }
@@ -130,7 +130,7 @@ const getProcess = (req, res, next) => {
                         stickerToLetter[numbering.sticker] = numbering.letter;
                     }
 
-                    return problemListDetailModel
+                    return threeStyleQuizProblemListNameModel
                         .findAll(
                             {
                                 where: {
@@ -140,14 +140,34 @@ const getProcess = (req, res, next) => {
                                 raw: true,
                             }
                         )
-                        .then(problemListDetails => {
-                            return problemListDetails.map(problemListDetail => {
-                                const letter1 = stickerToLetter[problemListDetail.sticker1];
-                                const letter2 = stickerToLetter[problemListDetail.sticker2];
-                                const letters = `${letter1}${letter2}`;
-                                problemListDetail.letters = letters;
-                                return problemListDetail;
-                            });
+                        .then(listNames => {
+                            if (listNames.length === 0) {
+                                const msg = `No such problemListId for ${userName} : ${problemListId}`;
+                                return Promise.reject(new Error(msg));
+                            }
+
+                            return problemListDetailModel
+                                .findAll(
+                                    {
+                                        where: {
+                                            problemListId,
+                                        },
+                                        raw: true,
+                                    }
+                                )
+                                .then(problemListDetails => {
+                                    return problemListDetails.map(problemListDetail => {
+                                        const letter1 = stickerToLetter[problemListDetail.sticker1];
+                                        const letter2 = stickerToLetter[problemListDetail.sticker2];
+                                        const letters = `${letter1}${letter2}`;
+                                        problemListDetail.letters = letters;
+                                        return problemListDetail;
+                                    });
+                                })
+                                .catch((err) => {
+                                    console.dir(err);
+                                    return Promise.reject(new Error());
+                                });
                         })
                         .catch((err) => {
                             console.dir(err);
@@ -235,7 +255,6 @@ const postProcess = (req, res, next) => {
                 .map(lst => {
                     return {
                         problemListId,
-                        userName,
                         buffer: lst[0],
                         sticker1: lst[1],
                         sticker2: lst[2],

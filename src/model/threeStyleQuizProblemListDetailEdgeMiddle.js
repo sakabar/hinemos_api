@@ -22,11 +22,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        userName: {
-            field: 'user_name',
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
         buffer: {
             field: 'buffer',
             type: DataTypes.ENUM(edges),
@@ -52,12 +47,6 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'three_style_quiz_problem_list_detail_edge_middle',
         charset: 'utf8',
         collate: 'utf8_unicode_ci',
-    });
-
-    const User = sequelize.import(path.join(__dirname, '/user'));
-    db.belongsTo(User, {
-        foreignKey: 'userName',
-        targetKey: 'userName',
     });
 
     const ProblemListNameEdgeMiddle = sequelize.import(path.join(__dirname, '/threeStyleQuizProblemListNameEdgeMiddle'));
