@@ -40,7 +40,7 @@ const postProcess = (req, res, next) => {
                 .destroy({
                     where: {
                         userName,
-                        words: {
+                        word: {
                             [Op.notIn]: wordsInRequest,
                         },
                     },
@@ -48,11 +48,13 @@ const postProcess = (req, res, next) => {
                 })
                 .then((result) => {
                     // 次に、UIの表から入力された情報でupsert
-                    const promises = [];
+                    const instances = [];
+
                     for (let i = 0; i < letterPairTable.length; i++) {
+                        const letters = letterPairTable[i].letters;
                         const words = letterPairTable[i].words;
+
                         for (let k = 0; k < words.length; k++) {
-                            const letters = letterPairTable[i].letters;
                             const word = letterPairTable[i].words[k];
 
                             const instance = {
@@ -61,53 +63,35 @@ const postProcess = (req, res, next) => {
                                 letters,
                             };
 
-                            promises.push(
-                                LetterPair
-                                    .create(instance, {
-                                        transaction: t,
-                                    })
-                                    .then((result) => {
-                                        return {
-                                            code: 200,
-                                            params: instance,
-                                            msg: 'OK',
-                                        };
-                                    })
-                                    .catch(() => {
-                                        const msg = `『ひらがな「${String(instance.letters)}」に単語「${String(instance.word)}」を割り当てようとしたところ、エラーが発生しました。』`;
-                                        throw new Error(msg);
-                                    }));
+                            instances.push(instance);
                         }
                     }
 
-                    return Promise.all(promises)
-                        .then((result) => {
-                            return 200;
+                    return LetterPair
+                        .bulkCreate(instances,
+                            {
+                                transaction: t,
+                                fields: [ 'userName', 'word', 'letters', ],
+                                updateOnDuplicate: [ 'letters', ],
+                            }
+                        )
+                        .then(result => {
+                            const ans = {
+                                success: {
+                                    code: 200,
+                                    result: instances,
+                                },
+                            };
+                            res.json(ans);
+                            res.status(200);
                         })
                         .catch((err) => {
-                            throw new Error(err);
+                            res.status(400).json(getBadRequestError(err));
                         });
                 })
                 .catch((err) => {
-                    throw new Error(err);
+                    res.status(400).json(getBadRequestError(err));
                 });
-        })
-        .then((result) => {
-            if (result === 200) {
-                const ans = {
-                    success: {
-                        code: 200,
-                        result,
-                    },
-                };
-                res.json(ans);
-                res.status(200);
-            } else {
-                throw new Error('error');
-            }
-        })
-        .catch((err) => {
-            res.status(400).json(getBadRequestError(err));
         });
 };
 
