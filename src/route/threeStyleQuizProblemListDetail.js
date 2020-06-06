@@ -81,6 +81,7 @@ const getAllNumberingPair = (part, userName) => {
                         buffer: buffer.sticker,
                         sticker1: numbering1.sticker,
                         sticker2: numbering2.sticker,
+                        stickers: `${buffer.sticker} ${numbering1.sticker} ${numbering2.sticker}`,
                         letter1: numbering1.letter,
                         letter2: numbering2.letter,
                         letters: `${numbering1.letter}${numbering2.letter}`,
