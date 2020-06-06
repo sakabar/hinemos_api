@@ -270,7 +270,12 @@ const postProcess = (req, res, next) => {
                 return;
             }
 
-            return problemListDetailModel.bulkCreate(instances)
+            return problemListDetailModel.bulkCreate(
+                instances,
+                {
+                    // 1つのリストに同じ手順が複数レコード登録されることを避ける
+                    updateOnDuplicate: [ 'updatedAt', ],
+                })
                 .then(() => {
                     return threeStyleQuizProblemListNameModel
                         .update({

@@ -11,31 +11,29 @@ module.exports = (sequelize, DataTypes) => {
     ];
 
     const db = sequelize.define('three_sytle_quiz_problem_list_detail_edge_middle', {
-        problemListDetailId: {
-            field: 'problem_list_detail_id',
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
-        },
         problemListId: {
             field: 'problem_list_id',
             type: DataTypes.INTEGER,
             allowNull: false,
+            primaryKey: true,
         },
         buffer: {
             field: 'buffer',
             type: DataTypes.ENUM(edges),
             allowNull: false,
+            primaryKey: true,
         },
         sticker1: {
             field: 'sticker1',
             type: DataTypes.ENUM(edges),
             allowNull: false,
+            primaryKey: true,
         },
         sticker2: {
             field: 'sticker2',
             type: DataTypes.ENUM(edges),
             allowNull: false,
+            primaryKey: true,
         },
         stickers: {
             field: 'stickers',
