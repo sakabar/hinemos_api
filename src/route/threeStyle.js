@@ -2,7 +2,7 @@
 const { sequelize, } = require('../model');
 const path = require('path');
 const utils = require('../lib/utils');
-// const { Algorithm, } = require('cuberyl');
+const { Algorithm, } = require('cuberyl');
 
 // const Op = Sequelize.Op;
 
@@ -20,13 +20,13 @@ const getThreeStyleModel = (part) => {
     return threeStyleModel;
 };
 
-// const makeThreeStyleAlg = (order, setup, move1, move2) => {
-//     if (setup !== '' && move1 === '' && move2 === '') {
-//         return new Algorithm(order, setup.replace(/'2/g, '2'));
-//     } else {
-//         return Algorithm.makeThreeStyle(order, setup.replace(/'2/g, '2'), move1.replace(/'2/g, '2'), move2.replace(/'2/g, '2'));
-//     }
-// };
+const makeThreeStyleAlg = (order, setup, move1, move2) => {
+    if (setup !== '' && move1 === '' && move2 === '') {
+        return new Algorithm(order, setup.replace(/'2/g, '2'));
+    } else {
+        return Algorithm.makeThreeStyle(order, setup.replace(/'2/g, '2'), move1.replace(/'2/g, '2'), move2.replace(/'2/g, '2'));
+    }
+};
 
 const getProcess = (req, res, next) => {
     const userName = req.query.userName;
@@ -93,8 +93,25 @@ const postProcess = (req, res, next) => {
     const okCond1 = (move1 !== '' && move2 !== '');
     const okCond2 = (move1 === '' && move2 === '' && setup !== '');
 
+    // FIXME 他のパートの場合は?
+    const order = 3;
+    const isValidCycle = (() => {
+        const alg = makeThreeStyleAlg(order, setup, move1, move2);
+
+        if (part === 'corner') {
+            return alg.isValidThreeStyleCorner(buffer, sticker1, sticker2);
+        } else if (part === 'edgeMiddle') {
+            return alg.isValidThreeStyleEdge(buffer, sticker1, sticker2);
+        }
+    })();
+
     if (!userName || !buffer || !sticker1 || !sticker2 || !(okCond1 || okCond2) || !(part === 'corner' || part === 'edgeMiddle')) {
         res.status(400).send('');
+        return;
+    }
+
+    if (!isValidCycle) {
+        res.status(400).send('3-styleが正しくありません');
         return;
     }
 
