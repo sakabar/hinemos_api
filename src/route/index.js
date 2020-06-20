@@ -5,6 +5,7 @@ exports.memoLogRecall = require('./memoLogRecall');
 exports.memoScore = require('./memoScore');
 exports.memoTrial = require('./memoTrial');
 
+exports.threeStyle = require('./threeStyle');
 exports.threeStyleTable = require('./threeStyleTable');
 
 exports.letterPairTable = require('./letterPairTable');
