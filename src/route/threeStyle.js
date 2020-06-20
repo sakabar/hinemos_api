@@ -120,28 +120,69 @@ const postProcess = (req, res, next) => {
 
     const threeStyleModel = getThreeStyleModel(part);
 
-    threeStyleModel
-        .create({
-            userName,
-            numberOfMoves,
-            buffer,
-            sticker1,
-            sticker2,
-            stickers,
-            setup,
-            move1,
-            move2,
+    //  重複登録を防ぐために、登録済みの手順のIDを持っておく
+    return threeStyleModel
+        .findAll({
+            where: {
+                userName,
+                buffer,
+                setup,
+                move1,
+                move2,
+            },
         })
-        .then((result) => {
-            const ans = {
-                success: {
-                    code: 200,
-                    result,
-                },
-            };
+        .then(origAlgsInSameBuffer => {
+            const algToValidId = {};
 
-            res.json(ans);
-            res.status(200);
+            origAlgsInSameBuffer.map(origAlg => {
+                const alg = makeThreeStyleAlg(order, origAlg.setup, origAlg.move1, origAlg.move2);
+
+                const isValidCycle = (() => {
+                    if (part === 'corner') {
+                        return alg.isValidThreeStyleCorner(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                    } else if (part === 'edgeMiddle') {
+                        return alg.isValidThreeStyleEdge(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                    }
+                })();
+
+                const algNotation = alg.getNotation();
+                if (isValidCycle && !(algNotation in algToValidId)) {
+                    algToValidId[algNotation] = origAlg.id;
+                }
+            });
+
+            const algNotation = makeThreeStyleAlg(order, setup, move1, move2).getNotation();
+            if (algNotation in algToValidId) {
+                res.status(400).send('既に登録済みの手順です');
+                return;
+            }
+
+            return threeStyleModel
+                .create({
+                    userName,
+                    numberOfMoves,
+                    buffer,
+                    sticker1,
+                    sticker2,
+                    stickers,
+                    setup,
+                    move1,
+                    move2,
+                })
+                .then((result) => {
+                    const ans = {
+                        success: {
+                            code: 200,
+                            result,
+                        },
+                    };
+
+                    res.json(ans);
+                    res.status(200);
+                })
+                .catch(() => {
+                    res.status(400).send('');
+                });
         })
         .catch(() => {
             res.status(400).send('');
