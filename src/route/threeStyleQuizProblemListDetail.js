@@ -55,7 +55,7 @@ const getThreeStyleQuizProblemListNameModel = (part) => {
 const getAllNumberingPair = (part, userName) => {
     const numberingModel = getNumberingModel(part);
     if (!numberingModel) {
-        return [];
+        return {};
     }
 
     return numberingModel
@@ -85,17 +85,26 @@ const getAllNumberingPair = (part, userName) => {
                         letter1: numbering1.letter,
                         letter2: numbering2.letter,
                         letters: `${numbering1.letter}${numbering2.letter}`,
+                        // 作成日時は無いが、一応それぞれの問題リストDetailを引いたときに合わせて
+                        // カラムは用意しておく
+                        createdAt: null,
+                        updatedAt: null,
                     };
 
                     ans.push(record);
                 }
             }
 
-            return ans.filter(record => !isInSamePiece(part, record.sticker1, record.sticker2));
+            const detail = ans.filter(record => !isInSamePiece(part, record.sticker1, record.sticker2));
+
+            return {
+                buffer,
+                detail,
+            };
         })
         .catch((err) => {
             console.dir(err);
-            return [];
+            return {};
         });
 };
 
@@ -125,6 +134,8 @@ const getProcess = (req, res, next) => {
                     }
                 )
                 .then(numberings => {
+                    const buffer = numberings.filter(numbering => numbering.letter === '@')[0];
+
                     const stickerToLetter = {};
                     for (let i = 0; i < numberings.length; i++) {
                         const numbering = numberings[i];
@@ -157,13 +168,18 @@ const getProcess = (req, res, next) => {
                                     }
                                 )
                                 .then(problemListDetails => {
-                                    return problemListDetails.map(problemListDetail => {
+                                    const detail = problemListDetails.map(problemListDetail => {
                                         const letter1 = stickerToLetter[problemListDetail.sticker1];
                                         const letter2 = stickerToLetter[problemListDetail.sticker2];
                                         const letters = `${letter1}${letter2}`;
                                         problemListDetail.letters = letters;
                                         return problemListDetail;
                                     });
+
+                                    return {
+                                        buffer,
+                                        detail,
+                                    };
                                 })
                                 .catch((err) => {
                                     console.dir(err);
@@ -187,7 +203,10 @@ const getProcess = (req, res, next) => {
             const ans = {
                 success: {
                     code: 200,
-                    result,
+                    // フォーマットが他のAPIと違うのは変だが、resultが0件のときも
+                    // バッファの情報を読み取れるようにする
+                    buffer: result.buffer.sticker,
+                    result: result.detail,
                 },
             };
 
