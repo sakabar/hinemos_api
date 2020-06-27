@@ -10,3 +10,6 @@ exports.threeStyleTable = require('./threeStyleTable');
 
 exports.letterPairTable = require('./letterPairTable');
 exports.letterPairCount = require('./letterPairCount');
+
+exports.threeStyleQuizProblemListName = require('./threeStyleQuizProblemListName');
+exports.threeStyleQuizProblemListDetail = require('./threeStyleQuizProblemListDetail');

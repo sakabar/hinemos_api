@@ -106,7 +106,7 @@ async function postProcess (req, res, next) {
         res.status(200);
         return;
     } catch (err) {
-        await t.rollback();
+        t.rollback();
         next(err);
     }
 };

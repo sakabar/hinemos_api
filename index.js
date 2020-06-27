@@ -1834,5 +1834,13 @@ sequelize.sync().then(() => {
     // app.get(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.getProcess, route.memoTrial.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/memoTrial`, validation.memoTrial.postProcess, route.memoTrial.postProcess);
 
+    // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
+    app.post(`${process.env.EXPRESS_ROOT}/getThreeStyleQuizProblemListName/:part`, route.threeStyleQuizProblemListName.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/postThreeStyleQuizProblemListName/:part`, route.threeStyleQuizProblemListName.postProcess);
+
+    // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
+    app.post(`${process.env.EXPRESS_ROOT}/getThreeStyleQuizProblemListDetail/:part`, route.threeStyleQuizProblemListDetail.getProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/postThreeStyleQuizProblemListDetail/:part`, route.threeStyleQuizProblemListDetail.postProcess);
+
     server.listen(process.env.EXPRESS_PORT);
 });
