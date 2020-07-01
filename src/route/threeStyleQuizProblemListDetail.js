@@ -69,6 +69,13 @@ const getAllNumberingPair = (part, userName) => {
             const buffer = numberings.filter(numbering => numbering.letter === '@')[0];
             const numberingsWithoutBuffer = numberings.filter(a => a.letter !== '@');
 
+            // ひらがなの昇順でソート
+            numberingsWithoutBuffer.sort((a, b) => {
+                if (a.letter < b.letter) return -1;
+                if (a.letter === b.letter) return 0;
+                if (a.letter > b.letter) return 1;
+            });
+
             const ans = [];
 
             for (let i = 0; i < numberingsWithoutBuffer.length; i++) {
@@ -216,30 +223,6 @@ const getProcess = (req, res, next) => {
         .catch(() => {
             res.status(400).send(getBadRequestError());
         });
-
-    // やろうとしていることが結構複雑
-    // problemListIdから、表示したいstickersを引く
-    // そのstickersとJOINして、手順を引く
-
-    // ナンバリングに変換 … → JOINが3回になっちゃうからダメかー。
-    // stickersから手順を引く
-    // stickersからクイズの結果を引く (これ今APIある?)
-
-    // return model
-    //     .findAll(query)
-    //     .then((result) => {
-    //         const ans = {
-    //             success: {
-    //                 code: 200,
-    //                 result,
-    //             },
-    //         };
-
-    //         res.json(ans);
-    //         res.status(200);
-    //     }, () => {
-    //         res.status(400).send(getBadRequestError(''));
-    //     });
 };
 
 const postProcess = (req, res, next) => {
