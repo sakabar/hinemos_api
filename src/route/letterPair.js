@@ -1,17 +1,20 @@
 const { sequelize, } = require('../model');
 const path = require('path');
-const { getBadRequestError, } = require('../lib/utils');
+const {
+    getBadRequestError,
+    getCharacterType,
+} = require('../lib/utils');
 
 const LetterPair = sequelize.import(path.join(__dirname, '../model/letterPair'));
 
 const postProcess = (req, res, next) => {
-    const hiraganas = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'.split(/(.{1})/).filter(x => x);
-
     const userName = req.params.userName;
     const inputWord = req.body.word;
     const letters = req.body.letters;
 
-    const lettersOk = letters.split(/(.)/).filter(x => x).every(ch => hiraganas.includes(ch));
+    const characterTypes = letters.split('').map(s => getCharacterType(s));
+    const lettersOk = new Set(characterTypes).size === 1;
+
     if ((req.decoded.userName !== userName) || !inputWord || !letters || !lettersOk) {
         res.status(400).send(getBadRequestError(''));
         return;
