@@ -1,3 +1,5 @@
+const constant = require('./constant');
+
 const badRequestError = {
     error: {
         message: 'Bad Request',
@@ -72,8 +74,60 @@ const getNumberOfMoves = (setup, move1, move2) => {
     return numberOfMoves;
 };
 
+// FIXME
+// UIと同じ実装が重複している
+const getHiraganas = () => {
+    const hiraganas = `
+        あいうえお
+        かきくけこ
+        さしすせそ
+        たちつてと
+        なにぬねの
+        はひふへほ
+        まみむめも
+        やゆよ
+        らりるれろ
+        わをん`;
+
+    return hiraganas.replace(/\s/g, '').split(/(.{1})/).filter(x => x);
+};
+
+const getAlphabets = () => {
+    const alphabets = `
+       ABCDE
+       FGHIJ
+       KLMNO
+       PQRST
+       UVWXY
+       Z`;
+
+    return alphabets.replace(/\s/g, '').split(/(.{1})/).filter(x => x);
+};
+
+const getCharacters = (characterType) => {
+    if (characterType === constant.characterType.hiragana) {
+        return getHiraganas();
+    } else if (characterType === constant.characterType.alphabet) {
+        return getAlphabets();
+    }
+
+    throw new Error('Unexpected characterType');
+};
+
+const getCharacterType = (ch) => {
+    if (getHiraganas().includes(ch)) {
+        return constant.characterType.hiragana;
+    } else if (getAlphabets().includes(ch)) {
+        return constant.characterType.alphabet;
+    }
+
+    throw new Error('Unexpected character');
+};
+
 exports.badRequestError = badRequestError;
 exports.getBadRequestError = getBadRequestError;
 exports.getMoveType = getMoveType;
 exports.getNumberOfOverlappedMoves = getNumberOfOverlappedMoves;
 exports.getNumberOfMoves = getNumberOfMoves;
+exports.getCharacters = getCharacters;
+exports.getCharacterType = getCharacterType;
