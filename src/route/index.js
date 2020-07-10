@@ -8,6 +8,7 @@ exports.memoTrial = require('./memoTrial');
 exports.threeStyle = require('./threeStyle');
 exports.threeStyleTable = require('./threeStyleTable');
 
+exports.letterPair = require('./letterPair');
 exports.letterPairTable = require('./letterPairTable');
 exports.letterPairCount = require('./letterPairCount');
 
