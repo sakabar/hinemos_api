@@ -6,13 +6,34 @@ const {
 
 const NumberingCorner = sequelize.import(path.join(__dirname, '../model/numberingCorner'));
 const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '../model/numberingEdgeMiddle'));
+const NumberingEdgeWing = sequelize.import(path.join(__dirname, '../model/numberingEdgeWing'));
+const NumberingCenterX = sequelize.import(path.join(__dirname, '../model/numberingCenterX'));
+const NumberingCenterT = sequelize.import(path.join(__dirname, '../model/numberingCenterT'));
+
+const getNumberingModel = (part) => {
+    if (part === 'corner') {
+        return NumberingCorner;
+    } else if (part === 'edgeMiddle') {
+        return NumberingEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return NumberingEdgeWing;
+    } else if (part === 'centerX') {
+        return NumberingCenterX;
+    } else if (part === 'centerT') {
+        return NumberingCenterT;
+    } else {
+        return null;
+    }
+};
 
 const getProcess = (req, res, next) => {
     const part = req.params.part;
     const userName = req.params.userName;
     const letters = req.query.letters;
 
-    if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
+    const partTypes = [ 'corner', 'edgeMiddle', 'edgeWing', 'centerX', 'centerT', ];
+
+    if (!userName || !(part in partTypes)) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
@@ -26,13 +47,7 @@ const getProcess = (req, res, next) => {
         query.where.letter = letters.split(/(.)/).filter(x => x);
     }
 
-    // cornerかedgeMiddle以外の場合、既にハジかれている
-    let numberingModel;
-    if (part === 'corner') {
-        numberingModel = NumberingCorner;
-    } else if (part === 'edgeMiddle') {
-        numberingModel = NumberingEdgeMiddle;
-    }
+    const numberingModel = getNumberingModel(part);
 
     return numberingModel
         .findAll(query)
@@ -60,17 +75,14 @@ const postProcess = (req, res, next) => {
     const uniqedLn = Array.from(new Set(numberings.map(x => x.letter))).length;
     const assertCond = uniqedLn === numberings.length;
 
-    if (!userName || !req.body.numberings || uniqedLn === 0 || !assertCond || !(part === 'corner' || part === 'edgeMiddle')) {
+    const partTypes = [ 'corner', 'edgeMiddle', 'edgeWing', 'centerX', 'centerT', ];
+
+    if (!userName || !req.body.numberings || uniqedLn === 0 || !assertCond || !(part in partTypes)) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
 
-    let numberingModel;
-    if (part === 'corner') {
-        numberingModel = NumberingCorner;
-    } else if (part === 'edgeMiddle') {
-        numberingModel = NumberingEdgeMiddle;
-    }
+    const numberingModel = getNumberingModel(part);
 
     sequelize
         .transaction((t) => {
