@@ -14,3 +14,5 @@ exports.letterPairCount = require('./letterPairCount');
 
 exports.threeStyleQuizProblemListName = require('./threeStyleQuizProblemListName');
 exports.threeStyleQuizProblemListDetail = require('./threeStyleQuizProblemListDetail');
+
+exports.numbering = require('./numbering');
