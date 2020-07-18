@@ -1744,6 +1744,7 @@ sequelize.sync().then(() => {
     // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
     app.post(`${process.env.EXPRESS_ROOT}/getThreeStyleQuizProblemListName/:part`, route.threeStyleQuizProblemListName.getProcess);
     app.post(`${process.env.EXPRESS_ROOT}/postThreeStyleQuizProblemListName/:part`, route.threeStyleQuizProblemListName.postProcess);
+    app.post(`${process.env.EXPRESS_ROOT}/deleteThreeStyleQuizProblemListName/:part`, route.threeStyleQuizProblemListName.deleteProcess);
 
     // トークンをGETメソッドのqueryに乗せるとマズいなのでPOST
     app.post(`${process.env.EXPRESS_ROOT}/getThreeStyleQuizProblemListDetail/:part`, route.threeStyleQuizProblemListDetail.getProcess);
