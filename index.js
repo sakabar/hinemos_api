@@ -1150,7 +1150,7 @@ sequelize.sync().then(() => {
     app.post(`${process.env.EXPRESS_ROOT}/threeStyle/:part`, route.threeStyle.postProcess);
 
     // 部分更新することは考えていないので、そのユーザのデータを全置き換え
-    app.post(process.env.EXPRESS_ROOT + '/numbering/:part/', route.numbering.postProcess);
+    app.post(process.env.EXPRESS_ROOT + '/numbering/:part', route.numbering.postProcess);
 
     app.post(process.env.EXPRESS_ROOT + '/threeStyleQuizLog/:part', (req, res, next) => {
         const userName = req.decoded.userName;

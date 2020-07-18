@@ -33,7 +33,7 @@ const getProcess = (req, res, next) => {
 
     const partTypes = [ 'corner', 'edgeMiddle', 'edgeWing', 'centerX', 'centerT', ];
 
-    if (!userName || !(part in partTypes)) {
+    if (!userName || !partTypes.includes(part)) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
@@ -77,7 +77,7 @@ const postProcess = (req, res, next) => {
 
     const partTypes = [ 'corner', 'edgeMiddle', 'edgeWing', 'centerX', 'centerT', ];
 
-    if (!userName || !req.body.numberings || uniqedLn === 0 || !assertCond || !(part in partTypes)) {
+    if (!userName || !req.body.numberings || uniqedLn === 0 || !assertCond || !partTypes.includes(part)) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
