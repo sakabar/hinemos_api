@@ -4,9 +4,27 @@ const path = require('path');
 const { sequelize, } = require('../model');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const constant = require('../lib/constant');
 
 const ThreeStyleQuizLogCorner = sequelize.import(path.join(__dirname, '../model/threeStyleQuizLogCorner'));
 const ThreeStyleQuizLogEdgeMiddle = sequelize.import(path.join(__dirname, '../model/threeStyleQuizLogEdgeMiddle'));
+const ThreeStyleQuizLogEdgeWing = sequelize.import(path.join(__dirname, '../model/threeStyleQuizLogEdgeWing'));
+const ThreeStyleQuizLogCenterX = sequelize.import(path.join(__dirname, '../model/threeStyleQuizLogCenterX'));
+const ThreeStyleQuizLogCenterT = sequelize.import(path.join(__dirname, '../model/threeStyleQuizLogCenterT'));
+
+const getThreeStyleQuizModel = (part) => {
+    if (part === 'corner') {
+        return ThreeStyleQuizLogCorner;
+    } else if (part === 'edgeMiddle') {
+        return ThreeStyleQuizLogEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return ThreeStyleQuizLogEdgeWing;
+    } if (part === 'centerX') {
+        return ThreeStyleQuizLogCenterX;
+    } if (part === 'centerT') {
+        return ThreeStyleQuizLogCenterT;
+    }
+};
 
 // stickers単位でそれぞれ直近の3つまで取ってくる
 // 新しい順にソート済という想定
@@ -97,7 +115,7 @@ const getProcess = (req, res, next) => {
     const part = req.params.part;
     const buffer = req.query.buffer;
 
-    if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
+    if (!userName || !constant.partTypeNames.includes(part)) {
         res.status(400).send('');
         return;
     }
@@ -135,12 +153,7 @@ const getProcess = (req, res, next) => {
         ],
     };
 
-    let threeStyleQuizLogModel;
-    if (part === 'corner') {
-        threeStyleQuizLogModel = ThreeStyleQuizLogCorner;
-    } else if (part === 'edgeMiddle') {
-        threeStyleQuizLogModel = ThreeStyleQuizLogEdgeMiddle;
-    }
+    const threeStyleQuizLogModel = getThreeStyleQuizModel(part);
 
     return threeStyleQuizLogModel
         .findAll(query)
@@ -169,17 +182,12 @@ const postProcess = (req, res, next) => {
     const sec = req.body.sec;
     const part = req.params.part;
 
-    if (!userName || !buffer || !sticker1 || !sticker2 || !usedHint || !isRecalled || !sec || !(part === 'corner' || part === 'edgeMiddle')) {
+    if (!userName || !buffer || !sticker1 || !sticker2 || !usedHint || !isRecalled || !sec || !constant.partTypeNames.includes(part)) {
         res.status(400).send('');
         return;
     }
 
-    let threeStyleQuizLogModel;
-    if (part === 'corner') {
-        threeStyleQuizLogModel = ThreeStyleQuizLogCorner;
-    } else if (part === 'edgeMiddle') {
-        threeStyleQuizLogModel = ThreeStyleQuizLogEdgeMiddle;
-    }
+    const threeStyleQuizLogModel = getThreeStyleQuizModel(part);
 
     threeStyleQuizLogModel.create({
         userName,
