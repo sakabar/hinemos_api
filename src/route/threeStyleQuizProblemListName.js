@@ -1,18 +1,47 @@
 const { sequelize, } = require('../model');
 const path = require('path');
 const { getBadRequestError, } = require('../lib/utils');
+const constant = require('../lib/constant');
 
 const ThreeStyleQuizProblemListNameCorner = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCorner'));
 const ThreeStyleQuizProblemListNameEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameEdgeMiddle'));
+const ThreeStyleQuizProblemListNameEdgeWing = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameEdgeWing'));
+const ThreeStyleQuizProblemListNameCenterX = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCenterX'));
+const ThreeStyleQuizProblemListNameCenterT = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCenterT'));
 
 const NumberingCorner = sequelize.import(path.join(__dirname, '../../src/model/numberingCorner'));
 const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/numberingEdgeMiddle'));
+const NumberingEdgeWing = sequelize.import(path.join(__dirname, '../model/numberingEdgeWing'));
+const NumberingCenterX = sequelize.import(path.join(__dirname, '../model/numberingCenterX'));
+const NumberingCenterT = sequelize.import(path.join(__dirname, '../model/numberingCenterT'));
 
 const getNumberingModel = (part) => {
     if (part === 'corner') {
         return NumberingCorner;
     } else if (part === 'edgeMiddle') {
         return NumberingEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return NumberingEdgeWing;
+    } else if (part === 'centerX') {
+        return NumberingCenterX;
+    } else if (part === 'centerT') {
+        return NumberingCenterT;
+    } else {
+        return null;
+    }
+};
+
+const getThreeStyleQuizProblemListNameModel = (part) => {
+    if (part === 'corner') {
+        return ThreeStyleQuizProblemListNameCorner;
+    } else if (part === 'edgeMiddle') {
+        return ThreeStyleQuizProblemListNameEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return ThreeStyleQuizProblemListNameEdgeWing;
+    } else if (part === 'centerX') {
+        return ThreeStyleQuizProblemListNameCenterX;
+    } else if (part === 'centerT') {
+        return ThreeStyleQuizProblemListNameCenterT;
     } else {
         return null;
     }
@@ -22,12 +51,9 @@ const getProcess = (req, res, next) => {
     const userName = req.decoded.userName;
     const part = req.params.part;
 
-    let model;
-    if (part === 'corner') {
-        model = ThreeStyleQuizProblemListNameCorner;
-    } else if (part === 'edgeMiddle') {
-        model = ThreeStyleQuizProblemListNameEdgeMiddle;
-    } else {
+    const model = getThreeStyleQuizProblemListNameModel(part);
+
+    if (!model) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
@@ -78,17 +104,13 @@ const postProcess = (req, res, next) => {
 
     const numberingModel = getNumberingModel(part);
     const titles = req.body.titles;
-    if (!userName || !titles || !(part === 'corner' || part === 'edgeMiddle') || !numberingModel) {
+    if (!userName || !titles || !constant.partTypeNames.includes(part) || !numberingModel) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
 
-    let model;
-    if (part === 'corner') {
-        model = ThreeStyleQuizProblemListNameCorner;
-    } else if (part === 'edgeMiddle') {
-        model = ThreeStyleQuizProblemListNameEdgeMiddle;
-    } else {
+    const model = getThreeStyleQuizProblemListNameModel(part);
+    if (!model) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
@@ -149,18 +171,12 @@ const deleteProcess = (req, res, next) => {
     const part = req.params.part;
     const problemListIds = req.body.problemListIdsStr.split(',');
 
-    if (!userName || !(part === 'corner' || part === 'edgeMiddle')) {
+    if (!userName || !constant.partTypeNames.includes(part)) {
         res.status(400).send(getBadRequestError(''));
         return;
     }
 
-    const model = (() => {
-        if (part === 'corner') {
-            return ThreeStyleQuizProblemListNameCorner;
-        } else if (part === 'edgeMiddle') {
-            return ThreeStyleQuizProblemListNameEdgeMiddle;
-        }
-    })();
+    const model = getThreeStyleQuizProblemListNameModel(part);
 
     if (problemListIds.length === 0) {
         const ans = {

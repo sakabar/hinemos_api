@@ -4,17 +4,33 @@ const { getBadRequestError, } = require('../lib/utils');
 
 const ThreeStyleQuizProblemListNameCorner = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCorner'));
 const ThreeStyleQuizProblemListNameEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameEdgeMiddle'));
+const ThreeStyleQuizProblemListNameEdgeWing = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameEdgeWing'));
+const ThreeStyleQuizProblemListNameCenterX = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCenterX'));
+const ThreeStyleQuizProblemListNameCenterT = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListNameCenterT'));
+
 const ThreeStyleQuizProblemListDetailCorner = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListDetailCorner'));
 const ThreeStyleQuizProblemListDetailEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListDetailEdgeMiddle'));
+const ThreeStyleQuizProblemListDetailEdgeWing = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListDetailEdgeWing'));
+const ThreeStyleQuizProblemListDetailCenterX = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListDetailCenterX'));
+const ThreeStyleQuizProblemListDetailCenterT = sequelize.import(path.join(__dirname, '../../src/model/threeStyleQuizProblemListDetailCenterT'));
 
 const NumberingCorner = sequelize.import(path.join(__dirname, '../../src/model/numberingCorner'));
 const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '../../src/model/numberingEdgeMiddle'));
+const NumberingEdgeWing = sequelize.import(path.join(__dirname, '../model/numberingEdgeWing'));
+const NumberingCenterX = sequelize.import(path.join(__dirname, '../model/numberingCenterX'));
+const NumberingCenterT = sequelize.import(path.join(__dirname, '../model/numberingCenterT'));
 
 const getProblemListDetailModel = (part) => {
     if (part === 'corner') {
         return ThreeStyleQuizProblemListDetailCorner;
     } else if (part === 'edgeMiddle') {
         return ThreeStyleQuizProblemListDetailEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return ThreeStyleQuizProblemListDetailEdgeWing;
+    } else if (part === 'centerX') {
+        return ThreeStyleQuizProblemListDetailCenterX;
+    } else if (part === 'centerT') {
+        return ThreeStyleQuizProblemListDetailCenterT;
     } else {
         return null;
     }
@@ -26,9 +42,13 @@ const isInSamePiece = (part, sticker1, sticker2) => {
         const s1 = Array.from(sticker1).sort().join('');
         const s2 = Array.from(sticker2).sort().join('');
         return s1 === s2;
-    } else {
-        throw new Error('unexpected partType');
+    } else if (part === 'edgeWing') {
+        return sticker1 === sticker2;
+    } else if (part === 'centerX' || part === 'centerT') {
+        return sticker1[0] === sticker2[0];
     }
+
+    return false;
 };
 
 const getNumberingModel = (part) => {
@@ -36,6 +56,12 @@ const getNumberingModel = (part) => {
         return NumberingCorner;
     } else if (part === 'edgeMiddle') {
         return NumberingEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return NumberingEdgeWing;
+    } else if (part === 'centerX') {
+        return NumberingCenterX;
+    } else if (part === 'centerT') {
+        return NumberingCenterT;
     } else {
         return null;
     }
@@ -46,6 +72,12 @@ const getThreeStyleQuizProblemListNameModel = (part) => {
         return ThreeStyleQuizProblemListNameCorner;
     } else if (part === 'edgeMiddle') {
         return ThreeStyleQuizProblemListNameEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return ThreeStyleQuizProblemListNameEdgeWing;
+    } else if (part === 'centerX') {
+        return ThreeStyleQuizProblemListNameCenterX;
+    } else if (part === 'centerT') {
+        return ThreeStyleQuizProblemListNameCenterT;
     } else {
         return null;
     }
