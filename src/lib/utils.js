@@ -22,11 +22,11 @@ const getMoveType = (moveStr) => {
         throw new Error('Error: 入力が空です');
     }
 
-    const m = moveStr.match(/^([A-Za-z]+)'?2?$/);
+    const m = moveStr.match(/^[3-4]?([A-Za-z]+)'?2?$/);
     if (m) {
         return m[1];
     } else {
-        throw new Error('Error: パターンが一致しません。');
+        throw new Error(`Error: パターンが一致しません。: ${moveStr}`);
     }
 };
 

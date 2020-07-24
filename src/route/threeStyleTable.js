@@ -3,6 +3,7 @@ const { sequelize, } = require('../model');
 const path = require('path');
 const { getBadRequestError, } = require('../lib/utils');
 const utils = require('../lib/utils');
+const constant = require('../lib/constant');
 const { Algorithm, } = require('cuberyl');
 
 const Op = Sequelize.Op;
@@ -63,7 +64,7 @@ const postProcess = (req, res, next) => {
     const part = req.params.part;
     const buffer = req.body.buffer;
 
-    if (!userName || !threeStyleTable || !(part === 'corner' || part === 'edgeMiddle')) {
+    if (!userName || !constant.partTypeNames.includes(part)) {
         res.status(400).send(getBadRequestError());
         return;
     }
@@ -74,7 +75,8 @@ const postProcess = (req, res, next) => {
         } else if (part === 'edgeMiddle') {
             return 3;
         } else {
-            throw new Error('not implemented');
+            // FIXME 大丈夫?
+            return 3;
         }
     })();
 
@@ -127,6 +129,9 @@ const postProcess = (req, res, next) => {
                     // もし違うならエラーを出す。 (これにより、upsertする際に同じ値が複数存在する可能性が消える)
                     const errors = [];
                     for (let i = 0; i < threeStyleTable.length; i++) {
+                        // FIXME cuberyl
+                        break;
+
                         const ts = threeStyleTable[i];
                         const alg = makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2);
 
@@ -148,6 +153,18 @@ const postProcess = (req, res, next) => {
                                 return alg.isValidThreeStyleCorner(ts.buffer, ts.sticker1, ts.sticker2);
                             } else if (part === 'edgeMiddle') {
                                 return alg.isValidThreeStyleEdge(ts.buffer, ts.sticker1, ts.sticker2);
+                            } else if (part === 'edgeWing') {
+                                // FIXME cuberyl
+                                return true;
+                                // return alg.isValidThreeStyleWingEdge(ts.buffer, ts.sticker1, ts.sticker2);
+                            } else if (part === 'centerX') {
+                                // FIXME cuberyl
+                                return true;
+                                // return alg.isValidThreeStyleXcenter(ts.buffer, ts.sticker1, ts.sticker2);
+                            } else if (part === 'centerT') {
+                                // FIXME cuberyl
+                                return true;
+                                // return alg.isValidThreeStyleXcenter(ts.buffer, ts.sticker1, ts.sticker2);
                             }
                         })();
 
@@ -170,6 +187,10 @@ const postProcess = (req, res, next) => {
                     const uniqThreeStyleTable = [];
                     for (let i = 0; i < threeStyleTable.length; i++) {
                         const ts = threeStyleTable[i];
+
+                        // FIXME cuberyl
+                        uniqThreeStyleTable.push(ts);
+                        continue;
 
                         const alg = makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2).getNotation();
                         if (!algSet.has(alg)) {
@@ -198,33 +219,37 @@ const postProcess = (req, res, next) => {
                             const algToValidId = {};
 
                             origAlgsInSameBuffer.map(origAlg => {
-                                const alg = makeThreeStyleAlg(order, origAlg.setup, origAlg.move1, origAlg.move2);
+                                let alg;
+                                let isValidCycle;
 
-                                const isValidCycle = (() => {
-                                    if (part === 'corner') {
-                                        return alg.isValidThreeStyleCorner(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
-                                    } else if (part === 'edgeMiddle') {
-                                        return alg.isValidThreeStyleEdge(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
-                                    } else if (part === 'edgeWing') {
-                                        // FIXME update cuberyl for 4BLD
-                                        return true;
-                                        // const alg = makeThreeStyleAlg(4, setup, move1, move2);
-                                        // return alg.isValidThreeStyleWingEdge(buffer, sticker1, sticker2);
-                                    } else if (part === 'centerX') {
-                                        // FIXME update cuberyl for 4BLD
-                                        return true;
-                                        // const alg = makeThreeStyleAlg(4, setup, move1, move2);
-                                        // return alg.isValidThreeStyleXcenter(buffer, sticker1, sticker2);
-                                    } else if (part === 'centerT') {
-                                        // FIXME update cuberyl for 4BLD
-                                        return true;
-                                        // const alg = makeThreeStyleAlg(5, setup, move1, move2);
-                                        // return alg.isValidThreeStyleTcenter(buffer, sticker1, sticker2);
-                                    }
-                                })();
+                                if (part === 'corner') {
+                                    alg = makeThreeStyleAlg(order, origAlg.setup, origAlg.move1, origAlg.move2);
+                                    isValidCycle = alg.isValidThreeStyleCorner(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                } else if (part === 'edgeMiddle') {
+                                    alg = makeThreeStyleAlg(order, origAlg.setup, origAlg.move1, origAlg.move2);
+                                    isValidCycle = alg.isValidThreeStyleEdge(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                } else if (part === 'edgeWing') {
+                                    // FIXME update cuberyl for 4BLD
+                                    isValidCycle = true;
+                                    // const alg = makeThreeStyleAlg(4, setup, move1, move2);
+                                    // return alg.isValidThreeStyleWingEdge(buffer, sticker1, sticker2);
+                                } else if (part === 'centerX') {
+                                    // FIXME update cuberyl for 4BLD
+                                    isValidCycle = true;
+                                    // const alg = makeThreeStyleAlg(4, setup, move1, move2);
+                                    //  isValidCycle = alg.isValidThreeStyleXcenter(buffer, sticker1, sticker2);
+                                } else if (part === 'centerT') {
+                                    // FIXME update cuberyl for 4BLD
+                                    return true;
+                                    // const alg = makeThreeStyleAlg(5, setup, move1, move2);
+                                    // isValidCycle = alg.isValidThreeStyleTcenter(buffer, sticker1, sticker2);
+                                }
 
-                                const algNotation = alg.getNotation();
-                                if (isValidCycle && !(algNotation in algToValidId)) {
+                                // FIXME 5BLDの時にはいったん無視
+                                // const algNotation = alg.getNotation();
+                                // if (isValidCycle && !(algNotation in algToValidId)) {
+                                const algNotation = `${origAlg.buffer} ${origAlg.sticker1} ${origAlg.sticker2}`;
+                                if (isValidCycle) {
                                     algToValidId[algNotation] = origAlg.id;
                                 }
                             });
@@ -278,13 +303,17 @@ const postProcess = (req, res, next) => {
                                             move2: ts.move2,
                                         };
 
-                                        const algNotation = makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2).getNotation();
+                                        // FIXME 5BLDのため、いったん封印
+                                        const algNotation = `${ts.buffer} ${ts.sticker1} ${ts.sticker2}`;
+                                        // const algNotation = makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2).getNotation();
                                         if (algNotation in algToValidId) {
                                             instance.id = algToValidId[algNotation];
                                         }
 
                                         return instance;
                                     });
+
+                                    console.log(instances);
 
                                     return threeStyleModel
                                         .bulkCreate(instances,
