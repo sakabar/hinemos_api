@@ -3,7 +3,7 @@ const { sequelize, } = require('../model');
 const path = require('path');
 const utils = require('../lib/utils');
 const constant = require('../lib/constant');
-const { Algorithm, } = require('cuberyl');
+const { Algorithm333, Algorithm444, } = require('cuberyl');
 
 const ThreeStyleCorner = sequelize.import(path.join(__dirname, '../model/threeStyleCorner'));
 const ThreeStyleEdgeMiddle = sequelize.import(path.join(__dirname, '../model/threeStyleEdgeMiddle'));
@@ -30,9 +30,26 @@ const getThreeStyleModel = (part) => {
 
 const makeThreeStyleAlg = (order, setup, move1, move2) => {
     if (setup !== '' && move1 === '' && move2 === '') {
-        return new Algorithm(order, setup.replace(/'2/g, '2'));
+        const replacedSetup = setup.replace(/'2/g, '2');
+        if (order === 3) {
+            return new Algorithm333(replacedSetup);
+        } else if (order === 4) {
+            return new Algorithm444(replacedSetup);
+        } else {
+            throw new Error(`Unexpected order : ${order}`);
+        }
     } else {
-        return Algorithm.makeThreeStyle(order, setup.replace(/'2/g, '2'), move1.replace(/'2/g, '2'), move2.replace(/'2/g, '2'));
+        const replacedSetup = setup.replace(/'2/g, '2');
+        const replacedMove1 = move1.replace(/'2/g, '2');
+        const replacedMove2 = move2.replace(/'2/g, '2');
+
+        if (order === 3) {
+            return Algorithm333.makeThreeStyle(replacedSetup, replacedMove1, replacedMove2);
+        } else if (order === 4) {
+            return Algorithm444.makeThreeStyle(replacedSetup, replacedMove1, replacedMove2);
+        } else {
+            throw new Error(`Unexpected order : ${order}`);
+        }
     }
 };
 
@@ -109,20 +126,16 @@ const postProcess = (req, res, next) => {
             const alg = makeThreeStyleAlg(3, setup, move1, move2);
             return alg.isValidThreeStyleEdge(buffer, sticker1, sticker2);
         } else if (part === 'edgeWing') {
-            // FIXME update cuberyl for 4BLD
-            return true;
-            // const alg = makeThreeStyleAlg(4, setup, move1, move2);
-            // return alg.isValidThreeStyleWingEdge(buffer, sticker1, sticker2);
+            const alg = makeThreeStyleAlg(4, setup, move1, move2);
+            return alg.isValidThreeStyleWingEdge(buffer, sticker1, sticker2);
         } else if (part === 'centerX') {
-            // FIXME update cuberyl for 4BLD
-            return true;
-            // const alg = makeThreeStyleAlg(4, setup, move1, move2);
-            // return alg.isValidThreeStyleXcenter(buffer, sticker1, sticker2);
+            const alg = makeThreeStyleAlg(4, setup, move1, move2);
+            return alg.isValidThreeStyleXCenter(buffer, sticker1, sticker2);
         } else if (part === 'centerT') {
             // FIXME update cuberyl for 4BLD
-            return true;
+            return false;
             // const alg = makeThreeStyleAlg(5, setup, move1, move2);
-            // return alg.isValidThreeStyleTcenter(buffer, sticker1, sticker2);
+            // return alg.isValidThreeStyleTCenter(buffer, sticker1, sticker2);
         }
     })();
 
@@ -169,10 +182,10 @@ const postProcess = (req, res, next) => {
                     isValidCycle = alg.isValidThreeStyleWingEdge(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
                 } else if (part === 'centerX') {
                     alg = makeThreeStyleAlg(4, origAlg.setup, origAlg.move1, origAlg.move2);
-                    isValidCycle = alg.isValidThreeStyleXcenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                    isValidCycle = alg.isValidThreeStyleXCenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
                 } else if (part === 'centerT') {
                     alg = makeThreeStyleAlg(5, origAlg.setup, origAlg.move1, origAlg.move2);
-                    isValidCycle = alg.isValidThreeStyleTcenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                    isValidCycle = alg.isValidThreeStyleTCenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
                 }
 
                 const algNotation = alg.getNotation();
@@ -222,3 +235,4 @@ const postProcess = (req, res, next) => {
 
 exports.getProcess = getProcess;
 exports.postProcess = postProcess;
+exports.makeThreeStyleAlg = makeThreeStyleAlg;
