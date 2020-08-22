@@ -6,6 +6,7 @@ exports.memoScore = require('./memoScore');
 exports.memoTrial = require('./memoTrial');
 
 exports.threeStyle = require('./threeStyle');
+exports.threeStyleFromLetters = require('./threeStyleFromLetters');
 exports.threeStyleTable = require('./threeStyleTable');
 exports.threeStyleQuizLog = require('./threeStyleQuizLog');
 
