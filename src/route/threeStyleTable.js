@@ -3,43 +3,51 @@ const { sequelize, } = require('../model');
 const path = require('path');
 const { getBadRequestError, } = require('../lib/utils');
 const utils = require('../lib/utils');
-const { Algorithm, } = require('cuberyl');
+const constant = require('../lib/constant');
+// const { Algorithm333, Algorithm444, } = require('cuberyl');
+const threeStyleRoute = require('./threeStyle');
 
 const Op = Sequelize.Op;
 
 const ThreeStyleCorner = sequelize.import(path.join(__dirname, '../model/threeStyleCorner'));
 const ThreeStyleEdgeMiddle = sequelize.import(path.join(__dirname, '../model/threeStyleEdgeMiddle'));
+const ThreeStyleEdgeWing = sequelize.import(path.join(__dirname, '../model/threeStyleEdgeWing'));
+const ThreeStyleCenterX = sequelize.import(path.join(__dirname, '../model/threeStyleCenterX'));
+const ThreeStyleCenterT = sequelize.import(path.join(__dirname, '../model/threeStyleCenterT'));
 
 const NumberingCorner = sequelize.import(path.join(__dirname, '../model/numberingCorner'));
 const NumberingEdgeMiddle = sequelize.import(path.join(__dirname, '../model/numberingEdgeMiddle'));
+const NumberingEdgeWing = sequelize.import(path.join(__dirname, '../model/numberingEdgeWing'));
+const NumberingCenterX = sequelize.import(path.join(__dirname, '../model/numberingCenterX'));
+const NumberingCenterT = sequelize.import(path.join(__dirname, '../model/numberingCenterT'));
 
 const getThreeStyleModel = (part) => {
-    let threeStyleModel;
     if (part === 'corner') {
-        threeStyleModel = ThreeStyleCorner;
+        return ThreeStyleCorner;
     } else if (part === 'edgeMiddle') {
-        threeStyleModel = ThreeStyleEdgeMiddle;
+        return ThreeStyleEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return ThreeStyleEdgeWing;
+    } else if (part === 'centerX') {
+        return ThreeStyleCenterX;
+    } else if (part === 'centerT') {
+        return ThreeStyleCenterT;
     }
-
-    return threeStyleModel;
 };
 
 const getNumberingModel = (part) => {
-    let numberingModel;
     if (part === 'corner') {
-        numberingModel = NumberingCorner;
+        return NumberingCorner;
     } else if (part === 'edgeMiddle') {
-        numberingModel = NumberingEdgeMiddle;
-    }
-
-    return numberingModel;
-};
-
-const makeThreeStyleAlg = (order, setup, move1, move2) => {
-    if (setup !== '' && move1 === '' && move2 === '') {
-        return new Algorithm(order, setup.replace(/'2/g, '2'));
+        return NumberingEdgeMiddle;
+    } else if (part === 'edgeWing') {
+        return NumberingEdgeWing;
+    } else if (part === 'centerX') {
+        return NumberingCenterX;
+    } else if (part === 'centerT') {
+        return NumberingCenterT;
     } else {
-        return Algorithm.makeThreeStyle(order, setup.replace(/'2/g, '2'), move1.replace(/'2/g, '2'), move2.replace(/'2/g, '2'));
+        return null;
     }
 };
 
@@ -49,20 +57,12 @@ const postProcess = (req, res, next) => {
     const part = req.params.part;
     const buffer = req.body.buffer;
 
-    if (!userName || !threeStyleTable || !(part === 'corner' || part === 'edgeMiddle')) {
+    if (!userName || !constant.partTypeNames.includes(part)) {
         res.status(400).send(getBadRequestError());
         return;
     }
 
-    const order = (() => {
-        if (part === 'corner') {
-            return 3;
-        } else if (part === 'edgeMiddle') {
-            return 3;
-        } else {
-            throw new Error('not implemented');
-        }
-    })();
+    const order = threeStyleRoute.getOrder(part);
 
     const threeStyleModel = getThreeStyleModel(part);
     const numberingModel = getNumberingModel(part);
@@ -114,14 +114,21 @@ const postProcess = (req, res, next) => {
                     const errors = [];
                     for (let i = 0; i < threeStyleTable.length; i++) {
                         const ts = threeStyleTable[i];
-                        const alg = makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2);
+                        const alg = threeStyleRoute.makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2);
 
                         const sortedBuffer = [ ...ts.buffer, ].sort().join('');
                         const sortedSticker1 = [ ...ts.sticker1, ].sort().join('');
                         const sortedSticker2 = [ ...ts.sticker2, ].sort().join('');
 
-                        // FIXME 他のパートの場合は?
-                        if ((part === 'edgeMiddle' || part === 'corner') && (sortedBuffer === sortedSticker1 || sortedSticker1 === sortedSticker2 || sortedSticker2 === buffer)) {
+                        const isSamePartsCycle = (() => {
+                            if (part === 'edgeMiddle' || part === 'corner') {
+                                return (sortedBuffer === sortedSticker1 || sortedSticker1 === sortedSticker2 || sortedSticker2 === buffer);
+                            } else {
+                                return (ts.buffer === ts.sticker1 || ts.sticker1 === ts.sticker2 || ts.sticker2 === ts.buffer);
+                            }
+                        })();
+
+                        if (isSamePartsCycle) {
                             const letter1 = numberingDict[ts.sticker1];
                             const letter2 = numberingDict[ts.sticker2];
                             const msg = `「${letter1}${letter2}」が同じパーツです`;
@@ -134,6 +141,14 @@ const postProcess = (req, res, next) => {
                                 return alg.isValidThreeStyleCorner(ts.buffer, ts.sticker1, ts.sticker2);
                             } else if (part === 'edgeMiddle') {
                                 return alg.isValidThreeStyleEdge(ts.buffer, ts.sticker1, ts.sticker2);
+                            } else if (part === 'edgeWing') {
+                                return alg.isValidThreeStyleWingEdge(ts.buffer, ts.sticker1, ts.sticker2);
+                            } else if (part === 'centerX') {
+                                return alg.isValidThreeStyleXCenter(ts.buffer, ts.sticker1, ts.sticker2);
+                            } else if (part === 'centerT') {
+                                // FIXME cuberyl
+                                return false;
+                                // return alg.isValidThreeStyleTCenter(ts.buffer, ts.sticker1, ts.sticker2);
                             }
                         })();
 
@@ -157,7 +172,7 @@ const postProcess = (req, res, next) => {
                     for (let i = 0; i < threeStyleTable.length; i++) {
                         const ts = threeStyleTable[i];
 
-                        const alg = makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2).getNotation();
+                        const alg = threeStyleRoute.makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2).getNotation();
                         if (!algSet.has(alg)) {
                             uniqThreeStyleTable.push(ts);
                         }
@@ -184,15 +199,22 @@ const postProcess = (req, res, next) => {
                             const algToValidId = {};
 
                             origAlgsInSameBuffer.map(origAlg => {
-                                const alg = makeThreeStyleAlg(order, origAlg.setup, origAlg.move1, origAlg.move2);
+                                const alg = threeStyleRoute.makeThreeStyleAlg(order, origAlg.setup, origAlg.move1, origAlg.move2);
+                                let isValidCycle;
 
-                                const isValidCycle = (() => {
-                                    if (part === 'corner') {
-                                        return alg.isValidThreeStyleCorner(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
-                                    } else if (part === 'edgeMiddle') {
-                                        return alg.isValidThreeStyleEdge(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
-                                    }
-                                })();
+                                if (part === 'corner') {
+                                    isValidCycle = alg.isValidThreeStyleCorner(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                } else if (part === 'edgeMiddle') {
+                                    isValidCycle = alg.isValidThreeStyleEdge(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                } else if (part === 'edgeWing') {
+                                    isValidCycle = alg.isValidThreeStyleWingEdge(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                } else if (part === 'centerX') {
+                                    isValidCycle = alg.isValidThreeStyleXCenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                } else if (part === 'centerT') {
+                                    // FIXME update cuberyl for 5BLD
+                                    return false;
+                                    // isValidCycle = alg.isValidThreeStyleTCenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                }
 
                                 const algNotation = alg.getNotation();
                                 if (isValidCycle && !(algNotation in algToValidId)) {
@@ -249,7 +271,7 @@ const postProcess = (req, res, next) => {
                                             move2: ts.move2,
                                         };
 
-                                        const algNotation = makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2).getNotation();
+                                        const algNotation = threeStyleRoute.makeThreeStyleAlg(order, ts.setup, ts.move1, ts.move2).getNotation();
                                         if (algNotation in algToValidId) {
                                             instance.id = algToValidId[algNotation];
                                         }
