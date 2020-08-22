@@ -53,6 +53,21 @@ const makeThreeStyleAlg = (order, setup, move1, move2) => {
     }
 };
 
+const getOrder = (part) => {
+    if (part === 'corner') {
+        return 3;
+    } else if (part === 'edgeMiddle') {
+        return 3;
+    } else if (part === 'edgeWing' || part === 'centerX') {
+        return 4;
+    } else if (part === 'centerT') {
+        // return 5;
+        throw new Error('Not implemented : centerT');
+    }
+
+    throw new Error('Unexpected part: ${}');
+};
+
 const getProcess = (req, res, next) => {
     const userName = req.query.userName;
     const buffer = req.query.buffer;
@@ -194,8 +209,8 @@ const postProcess = (req, res, next) => {
                 }
             });
 
-            // ここはnotationを使うだけだからorder=3にしてしまっていいはず
-            const algNotation = makeThreeStyleAlg(3, setup, move1, move2).getNotation();
+            const order = getOrder(part);
+            const algNotation = makeThreeStyleAlg(order, setup, move1, move2).getNotation();
             if (algNotation in algToValidId) {
                 res.status(400).send('既に登録済みの手順です');
                 return;
@@ -235,4 +250,5 @@ const postProcess = (req, res, next) => {
 
 exports.getProcess = getProcess;
 exports.postProcess = postProcess;
+exports.getOrder = getOrder;
 exports.makeThreeStyleAlg = makeThreeStyleAlg;

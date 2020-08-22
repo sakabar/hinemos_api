@@ -62,20 +62,7 @@ const postProcess = (req, res, next) => {
         return;
     }
 
-    const order = (() => {
-        if (part === 'corner') {
-            return 3;
-        } else if (part === 'edgeMiddle') {
-            return 3;
-        } else if (part === 'edgeWing' || part === 'centerX') {
-            return 4;
-        } else if (part === 'centerT') {
-            // return 5;
-            throw new Error('Not implemented : centerT');
-        }
-
-        throw new Error('Unexpected part: ${}');
-    })();
+    const order = threeStyleRoute.getOrder(part);
 
     const threeStyleModel = getThreeStyleModel(part);
     const numberingModel = getNumberingModel(part);
