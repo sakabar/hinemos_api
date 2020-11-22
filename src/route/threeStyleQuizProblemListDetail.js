@@ -311,24 +311,40 @@ const postProcess = (req, res, next) => {
                     updateOnDuplicate: [ 'updatedAt', ],
                 })
                 .then(() => {
-                    return threeStyleQuizProblemListNameModel
-                        .update({
-                            numberOfAlgs: problemList.numberOfAlgs + instances.length,
-                        }, {
+                    // 問題リスト内の手順数を取得し、problemListNameのレコードを更新
+                    // 既に登録された手順はスキップされるので、単にinstance.lengthを
+                    // 加えるだけだと実際の手順数よりも多くなってしまってダメ
+
+                    problemListDetailModel.count(
+                        {
                             where: {
                                 problemListId: problemList.problemListId,
                             },
                         })
-                        .then(() => {
-                            const ans = {
-                                success: {
-                                    code: 200,
-                                    result: instances,
-                                },
-                            };
+                        .then(dataCount => {
+                            return threeStyleQuizProblemListNameModel
+                                .update({
+                                    numberOfAlgs: dataCount,
+                                }, {
+                                    where: {
+                                        problemListId: problemList.problemListId,
+                                    },
+                                })
+                                .then(() => {
+                                    const ans = {
+                                        success: {
+                                            code: 200,
+                                            result: instances,
+                                        },
+                                    };
 
-                            res.json(ans);
-                            res.status(200);
+                                    res.json(ans);
+                                    res.status(200);
+                                })
+                                .catch((err) => {
+                                    console.dir(err);
+                                    res.status(400).send(getBadRequestError(''));
+                                });
                         })
                         .catch((err) => {
                             console.dir(err);
