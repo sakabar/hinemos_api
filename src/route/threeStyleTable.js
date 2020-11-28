@@ -53,7 +53,7 @@ const getNumberingModel = (part) => {
 
 const postProcess = (req, res, next) => {
     const userName = req.decoded.userName;
-    const threeStyleTable = req.body.threeStyleTable;
+    const threeStyleTable = req.body.threeStyleTable || [];
     const part = req.params.part;
     const buffer = req.body.buffer;
 
