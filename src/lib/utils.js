@@ -74,8 +74,7 @@ const getNumberOfMoves = (setup, move1, move2) => {
     return numberOfMoves;
 };
 
-// FIXME
-// UIと同じ実装が重複している
+// FIXME UIと同じ実装が重複している
 const getHiraganas = () => {
     const hiraganas = `
         あいうえお

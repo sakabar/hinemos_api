@@ -3,8 +3,11 @@ const { sequelize, } = require('../model');
 const path = require('path');
 const utils = require('../lib/utils');
 const constant = require('../lib/constant');
-const { Algorithm333, Algorithm444, } = require('cuberyl');
-
+const {
+    Algorithm333,
+    Algorithm444,
+    Algorithm555,
+} = require('cuberyl');
 const ThreeStyleCorner = sequelize.import(path.join(__dirname, '../model/threeStyleCorner'));
 const ThreeStyleEdgeMiddle = sequelize.import(path.join(__dirname, '../model/threeStyleEdgeMiddle'));
 const ThreeStyleEdgeWing = sequelize.import(path.join(__dirname, '../model/threeStyleEdgeWing'));
@@ -35,6 +38,8 @@ const makeThreeStyleAlg = (order, setup, move1, move2) => {
             return new Algorithm333(replacedSetup);
         } else if (order === 4) {
             return new Algorithm444(replacedSetup);
+        } else if (order === 5) {
+            return new Algorithm555(replacedSetup);
         } else {
             throw new Error(`Unexpected order : ${order}`);
         }
@@ -47,6 +52,8 @@ const makeThreeStyleAlg = (order, setup, move1, move2) => {
             return Algorithm333.makeThreeStyle(replacedSetup, replacedMove1, replacedMove2);
         } else if (order === 4) {
             return Algorithm444.makeThreeStyle(replacedSetup, replacedMove1, replacedMove2);
+        } else if (order === 5) {
+            return Algorithm555.makeThreeStyle(replacedSetup, replacedMove1, replacedMove2);
         } else {
             throw new Error(`Unexpected order : ${order}`);
         }
@@ -61,11 +68,10 @@ const getOrder = (part) => {
     } else if (part === 'edgeWing' || part === 'centerX') {
         return 4;
     } else if (part === 'centerT') {
-        // return 5;
-        throw new Error('Not implemented : centerT');
+        return 5;
     }
 
-    throw new Error('Unexpected part: ${}');
+    throw new Error('Unexpected part: ${part}');
 };
 
 const getProcess = (req, res, next) => {
@@ -147,10 +153,8 @@ const postProcess = (req, res, next) => {
             const alg = makeThreeStyleAlg(4, setup, move1, move2);
             return alg.isValidThreeStyleXCenter(buffer, sticker1, sticker2);
         } else if (part === 'centerT') {
-            // FIXME update cuberyl for 4BLD
-            return false;
-            // const alg = makeThreeStyleAlg(5, setup, move1, move2);
-            // return alg.isValidThreeStyleTCenter(buffer, sticker1, sticker2);
+            const alg = makeThreeStyleAlg(5, setup, move1, move2);
+            return alg.isValidThreeStyleTCenter(buffer, sticker1, sticker2);
         }
     })();
 
