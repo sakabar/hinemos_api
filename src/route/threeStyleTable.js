@@ -146,9 +146,7 @@ const postProcess = (req, res, next) => {
                             } else if (part === 'centerX') {
                                 return alg.isValidThreeStyleXCenter(ts.buffer, ts.sticker1, ts.sticker2);
                             } else if (part === 'centerT') {
-                                // FIXME cuberyl
-                                return false;
-                                // return alg.isValidThreeStyleTCenter(ts.buffer, ts.sticker1, ts.sticker2);
+                                return alg.isValidThreeStyleTCenter(ts.buffer, ts.sticker1, ts.sticker2);
                             }
                         })();
 
@@ -211,9 +209,7 @@ const postProcess = (req, res, next) => {
                                 } else if (part === 'centerX') {
                                     isValidCycle = alg.isValidThreeStyleXCenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
                                 } else if (part === 'centerT') {
-                                    // FIXME update cuberyl for 5BLD
-                                    return false;
-                                    // isValidCycle = alg.isValidThreeStyleTCenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
+                                    isValidCycle = alg.isValidThreeStyleTCenter(origAlg.buffer, origAlg.sticker1, origAlg.sticker2);
                                 }
 
                                 const algNotation = alg.getNotation();
