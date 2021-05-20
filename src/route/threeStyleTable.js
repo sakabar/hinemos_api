@@ -153,7 +153,7 @@ const postProcess = (req, res, next) => {
                         if (!isValidCycle) {
                             const letter1 = numberingDict[ts.sticker1];
                             const letter2 = numberingDict[ts.sticker2];
-                            const msg = `「${letter1}${letter2}」の ${ts.shownMove} が正しくありません。`;
+                            const msg = `「${letter1}${letter2}」 (${ts.buffer} ${ts.sticker1} ${ts.sticker2}) の ${ts.shownMove} = ${alg.getNotation()} が正しくありません。`;
                             errors.push(msg);
                             continue;
                         }
