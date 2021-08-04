@@ -1,4 +1,5 @@
-// const Sequelize = require('sequelize');
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 const { sequelize, } = require('../model');
 const path = require('path');
 const _ = require('lodash');
@@ -24,6 +25,9 @@ async function getProcess (req, res, next) {
         return res.status(400).json(getBadRequestError(msg));
     }
 
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date('2000-01-01');
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date('2037-12-31');
+
     const t = await sequelize.transaction().catch(next);
 
     try {
@@ -36,6 +40,10 @@ async function getProcess (req, res, next) {
             ],
             where: {
                 userName,
+                createdAt: {
+                    [Op.gte]: startDate,
+                    [Op.lte]: endDate,
+                },
             },
             group: [
                 'pos_ind',
@@ -64,6 +72,10 @@ async function getProcess (req, res, next) {
             ],
             where: {
                 userName,
+                createdAt: {
+                    [Op.gte]: startDate,
+                    [Op.lte]: endDate,
+                },
             },
             group: [
                 'pos_ind',
@@ -115,6 +127,10 @@ async function getProcess (req, res, next) {
                 ],
                 where: {
                     userName,
+                    createdAt: {
+                        [Op.gte]: startDate,
+                        [Op.lte]: endDate,
+                    },
                 },
                 include: [
                     {
