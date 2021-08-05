@@ -42,7 +42,7 @@ async function getProcess (req, res, next) {
                 userName,
                 createdAt: {
                     [Op.gte]: startDate,
-                    [Op.lte]: endDate,
+                    [Op.lt]: endDate,
                 },
             },
             group: [
@@ -74,7 +74,7 @@ async function getProcess (req, res, next) {
                 userName,
                 createdAt: {
                     [Op.gte]: startDate,
-                    [Op.lte]: endDate,
+                    [Op.lt]: endDate,
                 },
             },
             group: [
@@ -129,7 +129,7 @@ async function getProcess (req, res, next) {
                     userName,
                     createdAt: {
                         [Op.gte]: startDate,
-                        [Op.lte]: endDate,
+                        [Op.lt]: endDate,
                     },
                 },
                 include: [
