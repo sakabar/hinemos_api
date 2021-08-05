@@ -25,8 +25,8 @@ async function getProcess (req, res, next) {
         return res.status(400).json(getBadRequestError(msg));
     }
 
-    const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date('2000-01-01');
-    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date('2037-12-31');
+    const startDate = req.body.startDate ? new Date(req.body.startDate) : new Date('2000-01-01');
+    const endDate = req.body.endDate ? new Date(req.body.endDate) : new Date('2037-12-31');
 
     const t = await sequelize.transaction().catch(next);
 
