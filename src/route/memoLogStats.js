@@ -127,8 +127,8 @@ async function getProcess (req, res, next) {
                 result[posInd] = {};
             }
 
-            const memorizationSum = elementIdMemorizationCountDict[posInd][elementId] || 0;
-            const recallSum = elementIdRecallCountDict[posInd][elementId] || 0;
+            const memorizationSum = _.get(elementIdMemorizationCountDict, `[${posInd}][${elementId}]`, 0);
+            const recallSum = _.get(elementIdRecallCountDict, `[${posInd}][${elementId}]`, 0);
             const transformationSum = Math.max(0, memorizationSum - recallSum);
 
             if (!(elementId in result[posInd])) {
@@ -247,8 +247,9 @@ async function getProcess (req, res, next) {
 
             result[posInd][elementId].event = event;
             result[posInd][elementId][mode] = memoSec;
-            const memorizationSum = elementIdMemorizationCountDict[posInd][elementId] || 0;
-            const recallSum = elementIdRecallCountDict[posInd][elementId] || 0;
+
+            const memorizationSum = _.get(elementIdMemorizationCountDict, `[${posInd}][${elementId}]`, 0);
+            const recallSum = _.get(elementIdRecallCountDict, `[${posInd}][${elementId}]`, 0);
             const transformationSum = Math.max(0, memorizationSum - recallSum);
             result[posInd][elementId].transformationSum = transformationSum;
         });
