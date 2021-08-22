@@ -31,6 +31,27 @@ async function getProcess (req, res, next) {
     const t = await sequelize.transaction().catch(next);
 
     try {
+        const memorizationElementIdCount = await MemoLogMemorization.findAll({
+            raw: true,
+            attributes: [
+                [ 'pos_ind', 'posInd', ],
+                [ 'element_id', 'elementId', ],
+                [ sequelize.fn('count', sequelize.col('*')), 'elementIdCount', ],
+            ],
+            where: {
+                userName,
+                createdAt: {
+                    [Op.gte]: startDate,
+                    [Op.lt]: endDate,
+                },
+            },
+            group: [
+                'pos_ind',
+                'element_id',
+            ],
+            transaction: t,
+        });
+
         const recallElementIdCount = await MemoLogRecall.findAll({
             raw: true,
             attributes: [
@@ -52,14 +73,24 @@ async function getProcess (req, res, next) {
             transaction: t,
         });
 
-        // elementId => count
-        const elementIdCountDict = {};
+        // elementId => recallCount
+        const elementIdRecallCountDict = {};
         recallElementIdCount.map(rec => {
-            if (!(rec.posInd in elementIdCountDict)) {
-                elementIdCountDict[rec.posInd] = {};
+            if (!(rec.posInd in elementIdRecallCountDict)) {
+                elementIdRecallCountDict[rec.posInd] = {};
             }
 
-            elementIdCountDict[rec.posInd][rec.elementId] = rec.elementIdCount;
+            elementIdRecallCountDict[rec.posInd][rec.elementId] = rec.elementIdCount;
+        });
+
+        // elementId => memorizationCount
+        const elementIdMemorizationCountDict = {};
+        memorizationElementIdCount.map(rec => {
+            if (!(rec.posInd in elementIdMemorizationCountDict)) {
+                elementIdMemorizationCountDict[rec.posInd] = {};
+            }
+
+            elementIdMemorizationCountDict[rec.posInd][rec.elementId] = rec.elementIdCount;
         });
 
         const memoLogRecall = await MemoLogRecall.findAll({
@@ -96,12 +127,17 @@ async function getProcess (req, res, next) {
                 result[posInd] = {};
             }
 
+            const memorizationSum = elementIdMemorizationCountDict[posInd][elementId] || 0;
+            const recallSum = elementIdRecallCountDict[posInd][elementId] || 0;
+            const transformationSum = Math.max(0, memorizationSum - recallSum);
+
             if (!(elementId in result[posInd])) {
                 result[posInd][elementId] = {
                     event: null,
                     transformation: null,
                     memorization: null,
-                    recallSum: elementIdCountDict[posInd][elementId],
+                    recallSum,
+                    transformationSum,
                     recallData: [],
                 };
             }
@@ -109,7 +145,7 @@ async function getProcess (req, res, next) {
             result[posInd][elementId].recallData.push({
                 solutionElementId,
                 count: cnt,
-                rate: 1.0 * cnt / elementIdCountDict[posInd][elementId],
+                rate: recallSum === 0 ? 0.0 : 1.0 * cnt / recallSum,
             });
         });
 
@@ -203,13 +239,18 @@ async function getProcess (req, res, next) {
                     event: null,
                     transformation: null,
                     memorization: null,
-                    recallSum: null,
+                    recallSum: 0,
+                    transformationSum: 0,
                     recallData: [],
                 };
             }
 
             result[posInd][elementId].event = event;
             result[posInd][elementId][mode] = memoSec;
+            const memorizationSum = elementIdMemorizationCountDict[posInd][elementId] || 0;
+            const recallSum = elementIdRecallCountDict[posInd][elementId] || 0;
+            const transformationSum = Math.max(0, memorizationSum - recallSum);
+            result[posInd][elementId].transformationSum = transformationSum;
         });
 
         const ans = {
