@@ -20,7 +20,7 @@ const postProcess = (req, res, next) => {
         return;
     }
 
-    const words = inputWord.replace(/\s/g, '').split(/[,，、/／]/).filter(x => x.length > 0);
+    const words = inputWord.replace(/\s+/g, ' ').split(/[,，、/／]/).map(x => x.trim()).filter(x => x.length > 0);
     const promises = [];
     for (let i = 0; i < words.length; i++) {
         const word = words[i];
