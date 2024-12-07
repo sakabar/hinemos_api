@@ -58,7 +58,16 @@ async function getProcess (req, res, next) {
                 [ 'pos_ind', 'posInd', ],
                 [ 'element_id', 'elementId', ],
                 [ sequelize.fn('count', sequelize.col('*')), 'elementIdCount', ],
-                [ sequelize.fn('max', sequelize.col('losing_memory_sec')), 'maxLosingMemorySec', ],
+                [
+                    sequelize.fn('max',
+                                 sequelize.fn('if',
+                                              sequelize.literal('is_correct = 1'),
+                                              sequelize.col('losing_memory_sec'),
+                                              0.0
+                                             )
+                                ),
+                    'maxLosingMemorySec',
+                ],
             ],
             where: {
                 userName,
