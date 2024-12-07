@@ -58,6 +58,7 @@ async function getProcess (req, res, next) {
                 [ 'pos_ind', 'posInd', ],
                 [ 'element_id', 'elementId', ],
                 [ sequelize.fn('count', sequelize.col('*')), 'elementIdCount', ],
+                [ sequelize.fn('max', sequelize.col('losing_memory_sec')), 'maxLosingMemorySec', ],
             ],
             where: {
                 userName,
@@ -81,6 +82,16 @@ async function getProcess (req, res, next) {
             }
 
             elementIdRecallCountDict[rec.posInd][rec.elementId] = rec.elementIdCount;
+        });
+
+        // elementId => maxLosingMemorySec
+        const elementIdMaxLosingMemorySecDict = {};
+        recallElementIdCount.map(rec => {
+            if (!(rec.posInd in elementIdMaxLosingMemorySecDict)) {
+                elementIdMaxLosingMemorySecDict[rec.posInd] = {};
+            }
+
+            elementIdMaxLosingMemorySecDict[rec.posInd][rec.elementId] = rec.maxLosingMemorySec;
         });
 
         // elementId => memorizationCount
@@ -139,6 +150,7 @@ async function getProcess (req, res, next) {
                     recallSum,
                     transformationSum,
                     recallData: [],
+                    maxLosingMemorySec: null,
                 };
             }
 
@@ -247,6 +259,8 @@ async function getProcess (req, res, next) {
 
             result[posInd][elementId].event = event;
             result[posInd][elementId][mode] = memoSec;
+
+            result[posInd][elementId].maxLosingMemorySec = _.get(elementIdMaxLosingMemorySecDict, `[${posInd}][${elementId}]`, 0.0);
 
             const memorizationSum = _.get(elementIdMemorizationCountDict, `[${posInd}][${elementId}]`, 0);
             const recallSum = _.get(elementIdRecallCountDict, `[${posInd}][${elementId}]`, 0);
